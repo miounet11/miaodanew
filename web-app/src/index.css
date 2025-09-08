@@ -39,8 +39,8 @@
 
 :root {
   /* Button */
-  --radius: 0.625rem;
-  --font-size-base: 15px;
+  --radius: 0.75rem; /* 稍微增加圆角，更现代 */
+  --font-size-base: 16px; /* 调整到16px，更符合中文阅读习惯 */
   --app-bg: '';
   --app-left-panel-fg: '';
   --app-main-view: '';
@@ -56,16 +56,31 @@
 @layer base {
   body {
     @apply overflow-hidden;
+    /* 更现代的滚动条样式 */
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+      border-radius: 4px;
     }
 
     ::-webkit-scrollbar-thumb {
-      border-radius: 10px;
-      margin-left: 2px;
-      @apply bg-main-view-fg/10;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      transition: background-color 0.2s ease;
     }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* Firefox 滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
   }
 
   svg {
@@ -83,10 +98,40 @@
   .reset-heading {
     :is(h1, h2, h3, h4, h5, h6) {
       font-weight: 600;
-      font-size: 14px !important;
+      font-size: 15px !important;
+      line-height: 1.4;
       margin-top: 0 !important;
-      margin-bottom: 0.5em;
+      margin-bottom: 0.75em;
+      letter-spacing: -0.01em;
     }
+  }
+
+  /* 优化链接样式 */
+  a {
+    @apply !text-accent transition-colors duration-200;
+  }
+
+  a:hover {
+    opacity: 0.8;
+  }
+
+  /* 优化按钮悬停效果 */
+  button {
+    transition: all 0.2s ease;
+  }
+
+  button:hover {
+    transform: translateY(-0.5px);
+  }
+
+  /* 优化输入框样式 */
+  input, textarea {
+    transition: all 0.2s ease;
+  }
+
+  input:focus, textarea:focus {
+    outline: 2px solid hsl(var(--primary) / 0.2);
+    outline-offset: 1px;
   }
 }
 

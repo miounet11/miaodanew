@@ -6,24 +6,31 @@ import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
   cn(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none aria-invalid:ring-destructive/60 aria-invalid:border-destructive cursor-pointer",
-    'focus:border-accent focus:ring-2 focus:ring-accent/50 focus:accent-[0px]',
-    'focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:accent-[0px]'
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none aria-invalid:ring-destructive/60 aria-invalid:border-destructive cursor-pointer",
+    'focus:ring-2 focus:ring-offset-1 focus:ring-accent/50 focus:outline-none',
+    'focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-accent/50 focus-visible:outline-none'
   ),
   {
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-fg shadow-xs hover:bg-primary/90 focus-visible:ring-primary/60 focus:ring-primary/60 focus:border-primary focus-visible:border-primary',
+          'bg-primary text-primary-fg shadow-sm hover:bg-primary/90 hover:shadow-md active:scale-[0.98] focus-visible:ring-primary/60 focus:ring-primary/60',
         destructive:
-          'bg-destructive shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/60 text-destructive-fg focus:border-destructive focus:ring-destructive/60',
-        link: 'underline-offset-4 hover:no-underline',
+          'bg-destructive shadow-sm hover:bg-destructive/90 hover:shadow-md active:scale-[0.98] focus-visible:ring-destructive/60 text-destructive-fg focus:ring-destructive/60',
+        outline:
+          'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-fg active:scale-[0.98]',
+        secondary:
+          'bg-secondary text-secondary-fg shadow-sm hover:bg-secondary/80 active:scale-[0.98]',
+        ghost:
+          'hover:bg-accent hover:text-accent-fg active:scale-[0.98]',
+        link: 'text-primary underline-offset-4 hover:underline hover:no-underline',
       },
       size: {
-        default: 'h-7 px-3 py-2 has-[>svg]:px-3 rounded-sm',
-        sm: 'h-6 gap-1.5 px-2 has-[>svg]:px-2.5 rounded-sm',
-        lg: 'h-9 rounded-md px-4 has-[>svg]:px-4',
-        icon: 'size-8',
+        default: 'h-8 px-4 py-2 has-[>svg]:px-3.5',
+        sm: 'h-7 gap-1.5 px-3 has-[>svg]:px-2.5 text-xs',
+        lg: 'h-10 rounded-lg px-6 has-[>svg]:px-5 text-base',
+        xl: 'h-12 rounded-lg px-8 has-[>svg]:px-6 text-lg',
+        icon: 'size-9',
       },
     },
     defaultVariants: {

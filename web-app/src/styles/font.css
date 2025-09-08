@@ -49,3 +49,28 @@
   font-weight: 300;
   font-style: italic;
 }
+
+/* 系统字体栈优化 */
+:root {
+  --font-family-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-family-mono: 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', 'Source Code Pro', 'Fira Code', 'Droid Sans Mono', 'Courier New', monospace;
+}
+
+/* 全局字体设置 */
+* {
+  font-family: var(--font-family-primary);
+}
+
+/* 代码块使用等宽字体 */
+code,
+pre,
+.code-block {
+  font-family: var(--font-family-mono);
+}
+
+/* 优化文本渲染 */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
