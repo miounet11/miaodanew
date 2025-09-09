@@ -26,7 +26,7 @@ export const useModelProvider = create<ModelProviderState>()(
   persist(
     (set, get) => ({
       providers: [],
-      selectedProvider: 'miaoda',
+      selectedProvider: 'openai-compatible',
       selectedModel: null,
       deletedModels: [],
       getModelBy: (modelId: string) => {

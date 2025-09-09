@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 
 type ModelLoadState = {
-  modelLoadError?: string | ErrorObject
-  setModelLoadError: (error: string | ErrorObject | undefined) => void
+  modelLoadError?: string | import('@/types/app').ErrorObject
+  setModelLoadError: (error: string | import('@/types/app').ErrorObject | undefined) => void
 }
 
 export const useModelLoad = create<ModelLoadState>()((set) => ({

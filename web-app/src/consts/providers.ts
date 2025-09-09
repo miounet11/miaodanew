@@ -30,7 +30,7 @@ export const predefinedProviders = [
     api_key: 'sk-44mAODPoO9EzCVC3Qp8PVpImElGDEByuDGNQjsFJHGRbhPdp',
     base_url: 'https://ttkk.inping.com/v1',
     explore_models_url: 'https://www.miaoda.xin/',
-    provider: 'miaoda',
+    provider: 'openai-compatible',
     settings: [
       {
         key: 'api-key',
@@ -58,9 +58,9 @@ export const predefinedProviders = [
     ],
     models: [
       {
-        id: 'miaoda',
-        name: '妙答AI',
-        version: '1.0',
+        id: 'grok-3',
+        name: 'Grok-3',
+        version: '3.0',
         description: '妙答AI智能对话助手，提供免费的AI对话体验。',
         capabilities: ['completion', 'chat'],
       },

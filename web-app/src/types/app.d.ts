@@ -1,12 +1,13 @@
-type Language = 'en' | 'zh-CN' | 'zh-TW' | 'id' | 'vn' | 'pl' | 'de'
-interface LogEntry {
+export type Language = 'en' | 'zh-CN' | 'zh-TW' | 'id' | 'vn' | 'pl' | 'de'
+
+export interface LogEntry {
   timestamp: string | number
   level: 'info' | 'warn' | 'error' | 'debug'
   target: string
   message: string
 }
 
-type ErrorObject = {
+export type ErrorObject = {
   code?: string
   message: string
   details?: string

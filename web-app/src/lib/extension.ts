@@ -124,7 +124,11 @@ export class ExtensionManager {
    * Loads all registered extension.
    */
   async load() {
-    await Promise.all(this.listExtensions().map((ext) => ext.onLoad()))
+    // Web extensions are already loaded in activateExtension
+    // This method is kept for compatibility but doesn't need to do anything
+    // since onLoad is called during activation
+    console.log('ExtensionManager.load() called - extensions already loaded during activation')
+    return Promise.resolve()
   }
 
   /**
@@ -177,6 +181,8 @@ export class ExtensionManager {
     if (extension.extensionInstance) {
       this.register(extension.name, extension.extensionInstance)
       console.log(`Extension '${extension.name}' registered with pre-loaded instance`)
+      // Call onLoad for the pre-loaded extension instance
+      await extension.extensionInstance.onLoad()
       return
     }
     

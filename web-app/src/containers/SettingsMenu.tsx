@@ -7,6 +7,7 @@ import {
   IconChevronRight,
   IconMenu2,
   IconX,
+  IconSettings,
 } from '@tabler/icons-react'
 import { useMatches, useNavigate } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
@@ -137,26 +138,45 @@ const SettingsMenu = () => {
   return (
     <>
       <button
-        className="fixed top-4 right-4 sm:hidden size-5 cursor-pointer items-center justify-center rounded hover:bg-main-view-fg/10 transition-all duration-200 ease-in-out data-[state=open]:bg-main-view-fg/10 z-20"
+        className="fixed top-4 right-4 sm:hidden size-8 cursor-pointer flex items-center justify-center rounded-lg hover:bg-main-view-fg/8 transition-all duration-200 ease-in-out data-[state=open]:bg-main-view-fg/10 z-20 shadow-sm"
         onClick={toggleMenu}
         aria-label="Toggle settings menu"
       >
         {isMenuOpen ? (
-          <IconX size={18} className="text-main-view-fg relative z-20" />
+          <IconX size={20} className="text-main-view-fg relative z-20" />
         ) : (
-          <IconMenu2 size={18} className="text-main-view-fg relative z-20" />
+          <IconMenu2 size={20} className="text-main-view-fg relative z-20" />
         )}
       </button>
       <div
         className={cn(
-          'h-full w-44 shrink-0 px-1.5 pt-3 border-r border-main-view-fg/5 bg-main-view',
-          'sm:flex',
+          'h-full w-56 shrink-0 bg-main-view/95 backdrop-blur-sm border-r border-main-view-fg/8',
+          'sm:flex flex-col',
           isMenuOpen
-            ? 'flex fixed sm:hidden top-0 z-10 m-1 h-[calc(100%-8px)] border-r-0 border-l bg-main-view right-0 py-8 rounded-tr-lg rounded-br-lg'
+            ? 'flex fixed sm:hidden top-0 z-10 h-full border-r-0 bg-main-view/98 backdrop-blur-md right-0 shadow-2xl'
             : 'hidden'
         )}
       >
-        <div className="flex flex-col gap-1 w-full text-main-view-fg/90 font-medium">
+        {/* Brand Header */}
+        <div className="px-4 py-5 border-b border-main-view-fg/8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <IconSettings size={22} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold tracking-wide text-blue-600 font-extrabold">
+                Miaoda
+              </h2>
+              <p className="text-xs text-main-view-fg/60 font-medium">
+                {t('common:settings')}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Navigation List */}
+        <div className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="flex flex-col gap-1.5 w-full">
           {menuSettings.map((menu) => {
             if (!menu.isEnabled) {
               return null
@@ -165,10 +185,12 @@ const SettingsMenu = () => {
             <div key={menu.title}>
               <Link
                 to={menu.route}
-                className="block px-2 gap-1.5 cursor-pointer hover:bg-main-view-fg/5 py-1 w-full rounded [&.active]:bg-main-view-fg/5"
+                className="group block px-3 py-2.5 cursor-pointer hover:bg-main-view-fg/8 w-full rounded-lg transition-all duration-200 ease-in-out [&.active]:bg-main-view-fg/10 [&.active]:shadow-sm relative overflow-hidden"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-main-view-fg/80">{t(menu.title)}</span>
+                <div className="flex items-center justify-between relative z-10">
+                  <span className="text-sm font-medium text-main-view-fg/85 group-hover:text-main-view-fg transition-colors duration-200">
+                    {t(menu.title)}
+                  </span>
                   {menu.hasSubMenu && (
                     <button
                       onClick={(e) => {
@@ -176,12 +198,12 @@ const SettingsMenu = () => {
                         e.stopPropagation()
                         toggleProvidersExpansion()
                       }}
-                      className="text-main-view-fg/60 hover:text-main-view-fg/80"
+                      className="text-main-view-fg/60 hover:text-main-view-fg/80 transition-all duration-200"
                     >
                       {expandedProviders ? (
-                        <IconChevronDown size={16} />
+                        <IconChevronDown size={16} className="transition-transform duration-200" />
                       ) : (
-                        <IconChevronRight size={16} />
+                        <IconChevronRight size={16} className="transition-transform duration-200" />
                       )}
                     </button>
                   )}
@@ -190,7 +212,7 @@ const SettingsMenu = () => {
 
               {/* Sub-menu for model providers */}
               {menu.hasSubMenu && expandedProviders && (
-                <div className="ml-2 mt-1 space-y-1 first-step-setup-remote-provider">
+                <div className="ml-4 mt-2 space-y-1.5 first-step-setup-remote-provider animate-in slide-in-from-top-2 duration-200">
                   {activeProviders.map((provider) => {
                     const isActive = matches.some(
                       (match) =>
@@ -203,8 +225,8 @@ const SettingsMenu = () => {
                       <div key={provider.provider}>
                         <div
                           className={cn(
-                            'flex px-2 items-center gap-1.5 cursor-pointer hover:bg-main-view-fg/5 py-1 w-full rounded [&.active]:bg-main-view-fg/5 text-main-view-fg/80',
-                            isActive && 'bg-main-view-fg/5',
+                            'group flex px-3 py-2 items-center gap-2.5 cursor-pointer hover:bg-main-view-fg/6 w-full rounded-lg transition-all duration-200 ease-in-out text-main-view-fg/75',
+                            isActive && 'bg-main-view-fg/8 border-l-2 border-blue-500/50 shadow-sm',
                             // hidden for llama.cpp provider for setup remote provider
                             provider.provider === 'llama.cpp' &&
                               stepSetupRemoteProvider &&
@@ -223,8 +245,10 @@ const SettingsMenu = () => {
                           }
                         >
                           <ProvidersAvatar provider={provider} />
-                          <div className="truncate">
-                            <span>{getProviderTitle(provider.provider)}</span>
+                          <div className="truncate flex-1">
+                            <span className="text-xs font-medium group-hover:text-main-view-fg/90 transition-colors duration-200">
+                              {getProviderTitle(provider.provider)}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -235,6 +259,7 @@ const SettingsMenu = () => {
             </div>
             )
           })}
+          </div>
         </div>
       </div>
     </>

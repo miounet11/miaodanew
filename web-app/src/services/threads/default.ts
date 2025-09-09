@@ -50,7 +50,7 @@ export class DefaultThreadsService implements ThreadsService {
             {
               ...(thread.assistants?.[0] ?? defaultAssistant),
               model: {
-                id: thread.model?.id ?? '*',
+                id: thread.model?.id ?? 'grok-3',
                 engine: thread.model?.provider ?? 'llamacpp',
               },
             },
@@ -83,7 +83,7 @@ export class DefaultThreadsService implements ThreadsService {
         assistants: thread.assistants?.map((e) => {
           return {
             model: {
-              id: thread.model?.id ?? '*',
+              id: thread.model?.id ?? 'grok-3',
               engine: thread.model?.provider ?? 'llamacpp',
             },
             id: e.id,
@@ -93,10 +93,10 @@ export class DefaultThreadsService implements ThreadsService {
         }) ?? [
           {
             model: {
-              id: thread.model?.id ?? '*',
+              id: thread.model?.id ?? 'grok-3',
               engine: thread.model?.provider ?? 'llamacpp',
             },
-            id: 'jan',
+            id: 'miaoda',
             name: 'Miaoda',
           },
         ],

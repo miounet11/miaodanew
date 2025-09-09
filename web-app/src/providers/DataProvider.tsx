@@ -118,20 +118,20 @@ export function DataProvider() {
       }
     }
 
-    // Use first model from miaoda provider (default free AI)
-    const miaodaProvider = getProviderByName('miaoda')
+    // Use first model from openai-compatible provider (default free AI)
+    const openaiCompatProvider = getProviderByName('openai-compatible')
     if (
-      miaodaProvider &&
-      miaodaProvider.models &&
-      miaodaProvider.models.length > 0
+      openaiCompatProvider &&
+      openaiCompatProvider.models &&
+      openaiCompatProvider.models.length > 0
     ) {
       return {
-        model: miaodaProvider.models[0].id,
-        provider: miaodaProvider,
+        model: openaiCompatProvider.models[0].id,
+        provider: openaiCompatProvider,
       }
     }
 
-    // Fallback to llamacpp provider if miaoda is not available
+    // Fallback to llamacpp provider if openai-compatible is not available
     const llamacppProvider = getProviderByName('llamacpp')
     if (
       llamacppProvider &&

@@ -5,7 +5,7 @@ import { SystemInformation } from '../types'
  *
  * @returns {Promise<string>} A Promise that resolves with Miaoda's data folder path.
  */
-const getMiaodaDataFolderPath = (): Promise<string> => globalThis.core.api?.getMiaodaDataFolderPath()
+const getMiaodaDataFolderPath = (): Promise<string> => globalThis.core.api?.getJanDataFolderPath()
 
 /**
  * Opens the file explorer at a specific path.

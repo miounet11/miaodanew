@@ -515,7 +515,7 @@ export const useChat = () => {
       } catch (error) {
         if (!abortController.signal.aborted) {
           if (error && typeof error === 'object' && 'message' in error) {
-            setModelLoadError(error as ErrorObject)
+            setModelLoadError(error as import('@/types/app').ErrorObject)
           } else {
             setModelLoadError(`${error}`)
           }

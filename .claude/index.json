@@ -1,0 +1,375 @@
+{
+  "project": {
+    "name": "miaoda",
+    "description": "基于 Jan AI 框架二次开发的智能对话桌面应用",
+    "version": "0.6.6",
+    "lastScanned": "2025-09-08T21:41:49.000Z",
+    "scanVersion": "1.1.0"
+  },
+  "modules": [
+    {
+      "name": "core",
+      "path": "./core",
+      "type": "library",
+      "language": "typescript",
+      "description": "核心功能库，提供类型定义、浏览器扩展、AI 推理引擎等基础能力",
+      "entryPoints": [
+        "src/index.ts",
+        "src/browser/index.ts",
+        "src/types/index.ts"
+      ],
+      "interfaces": [
+        "AssistantEntity",
+        "MessageEntity", 
+        "ModelEntity",
+        "InferenceEntity",
+        "AIEngine",
+        "EngineManager"
+      ],
+      "dependencies": [
+        "rxjs",
+        "ulidx"
+      ],
+      "testFramework": "vitest",
+      "buildTool": "rolldown",
+      "coverage": {
+        "scanned": true,
+        "hasTests": true,
+        "hasTypes": true,
+        "hasDocumentation": true
+      }
+    },
+    {
+      "name": "web-app",
+      "path": "./web-app",
+      "type": "application",
+      "language": "typescript",
+      "description": "主要用户界面，基于 React 19 构建的现代化 AI 对话应用",
+      "entryPoints": [
+        "src/main.tsx",
+        "src/routes/__root.tsx"
+      ],
+      "interfaces": [
+        "routes/index.tsx - 主聊天界面",
+        "routes/assistant.tsx - 助手管理",
+        "routes/system-monitor.tsx - 系统监控",
+        "routes/logs.tsx - 日志查看",
+        "routes/hub/index.tsx - 模型市场",
+        "routes/settings/* - 设置页面",
+        "routes/threads/$threadId.tsx - 对话线程"
+      ],
+      "services": [
+        "app - 应用核心服务",
+        "assistants - 助手管理",
+        "core - 核心功能",
+        "messages - 消息处理", 
+        "models - 模型管理",
+        "providers - 提供商管理",
+        "threads - 对话线程",
+        "hardware - 硬件监控",
+        "events - 事件系统",
+        "mcp - MCP 服务器",
+        "theme - 主题管理",
+        "window - 窗口管理"
+      ],
+      "dependencies": [
+        "react",
+        "react-dom",
+        "@tanstack/react-router",
+        "zustand",
+        "i18next",
+        "@tauri-apps/api"
+      ],
+      "testFramework": "vitest",
+      "buildTool": "vite",
+      "coverage": {
+        "scanned": true,
+        "hasTests": true,
+        "hasTypes": true,
+        "hasDocumentation": true
+      }
+    },
+    {
+      "name": "extensions-web",
+      "path": "./extensions-web",
+      "type": "library",
+      "language": "typescript",
+      "description": "为 Miaoda Web 应用提供扩展功能和插件系统",
+      "entryPoints": [
+        "src/index.ts"
+      ],
+      "interfaces": [
+        "WebExtension",
+        "WebExtensionManager",
+        "extensionUtils"
+      ],
+      "dependencies": [
+        "@miaoda/core",
+        "zustand"
+      ],
+      "testFramework": "vitest",
+      "buildTool": "vite",
+      "coverage": {
+        "scanned": true,
+        "hasTests": false,
+        "hasTypes": true,
+        "hasDocumentation": true
+      }
+    },
+    {
+      "name": "extensions",
+      "path": "./extensions",
+      "type": "library",
+      "language": "typescript",
+      "description": "桌面端扩展系统，包含助手、对话、下载和 LlamaCpp 推理扩展",
+      "entryPoints": [
+        "assistant-extension/",
+        "conversational-extension/",
+        "download-extension/",
+        "llamacpp-extension/"
+      ],
+      "interfaces": [
+        "AssistantExtension - 助手功能扩展",
+        "ConversationalExtension - 对话处理扩展",
+        "DownloadExtension - 模型下载扩展",
+        "LlamaCppExtension - LlamaCpp 推理扩展"
+      ],
+      "dependencies": [
+        "@janhq/core",
+        "@janhq/tauri-plugin-hardware-api",
+        "@janhq/tauri-plugin-llamacpp-api"
+      ],
+      "testFramework": "none",
+      "buildTool": "rolldown",
+      "coverage": {
+        "scanned": true,
+        "hasTests": false,
+        "hasTypes": true,
+        "hasDocumentation": true
+      }
+    },
+    {
+      "name": "src-tauri",
+      "path": "./src-tauri",
+      "type": "application",
+      "language": "rust",
+      "description": "基于 Rust + Tauri 2.0 构建的桌面应用后端，提供系统集成和原生功能",
+      "entryPoints": [
+        "src/main.rs",
+        "src/lib.rs"
+      ],
+      "interfaces": [
+        "get_system_info",
+        "load_llama_model",
+        "get_hardware_usage",
+        "tauri-plugin-hardware",
+        "tauri-plugin-llamacpp"
+      ],
+      "dependencies": [
+        "tauri",
+        "tokio",
+        "serde",
+        "reqwest"
+      ],
+      "testFramework": "cargo-test",
+      "buildTool": "cargo",
+      "coverage": {
+        "scanned": true,
+        "hasTests": true,
+        "hasTypes": true,
+        "hasDocumentation": true
+      }
+    },
+    {
+      "name": "docs",
+      "path": "./docs",
+      "type": "documentation",
+      "language": "typescript",
+      "description": "基于 Next.js + Nextra 构建的项目文档和官网",
+      "entryPoints": [
+        "next.config.mjs",
+        "src/pages/_app.mdx"
+      ],
+      "interfaces": [
+        "changelog - 版本更新日志",
+        "blog - 博客文章",
+        "docs/* - 技术文档"
+      ],
+      "features": [
+        "Code Hike - 代码高亮",
+        "LaTeX 数学公式支持",
+        "Mermaid 图表支持",
+        "多语言文档",
+        "SEO 优化",
+        "Google Analytics 集成"
+      ],
+      "dependencies": [
+        "next",
+        "nextra",
+        "nextra-theme-docs",
+        "@code-hike/mdx"
+      ],
+      "testFramework": "none",
+      "buildTool": "next",
+      "coverage": {
+        "scanned": true,
+        "hasTests": false,
+        "hasTypes": false,
+        "hasDocumentation": true
+      }
+    },
+    {
+      "name": "autoqa",
+      "path": "./autoqa",
+      "type": "testing",
+      "language": "python",
+      "description": "基于 CUA Computer 框架的端到端自动化测试系统",
+      "entryPoints": [
+        "main.py",
+        "test_runner.py"
+      ],
+      "interfaces": [
+        "test_new_user_chatting - 新用户聊天测试",
+        "ReportPortal 集成",
+        "屏幕录制功能",
+        "跨平台支持 (Windows/macOS/Linux)"
+      ],
+      "features": [
+        "UI 自动化测试",
+        "硬件监控测试",
+        "模型加载测试",
+        "ReportPortal 报告集成",
+        "多平台脚本支持",
+        "屏幕录制和回放"
+      ],
+      "dependencies": [
+        "cua-computer",
+        "cua-agent", 
+        "reportportal-client",
+        "opencv-python",
+        "PyAutoGUI",
+        "psutil"
+      ],
+      "testFramework": "custom",
+      "buildTool": "python",
+      "coverage": {
+        "scanned": true,
+        "hasTests": true,
+        "hasTypes": false,
+        "hasDocumentation": true
+      }
+    },
+    {
+      "name": "scripts",
+      "path": "./scripts",
+      "type": "tooling",
+      "language": "javascript",
+      "description": "构建、下载和部署脚本集合",
+      "entryPoints": [
+        "download-lib.mjs",
+        "download-bin.mjs",
+        "find-missing-translations.js",
+        "find-missing-i18n-key.js"
+      ],
+      "interfaces": [
+        "Vulkan 库下载 (libvulkan.so/vulkan-1.dll)",
+        "二进制工具下载 (bun, uv)",
+        "国际化检查工具",
+        "构建工具链管理"
+      ],
+      "features": [
+        "自动平台检测",
+        "重定向处理",
+        "文件完整性验证",
+        "跨平台支持",
+        "i18n 完整性检查"
+      ],
+      "dependencies": [
+        "cpx",
+        "node.js"
+      ],
+      "testFramework": "none",
+      "buildTool": "node",
+      "coverage": {
+        "scanned": true,
+        "hasTests": false,
+        "hasTypes": false,
+        "hasDocumentation": true
+      }
+    }
+  ],
+  "statistics": {
+    "totalModules": 8,
+    "scannedModules": 8,
+    "documentedModules": 8,
+    "coveragePercent": 100.0,
+    "languages": {
+      "typescript": 4,
+      "rust": 1,
+      "python": 1,
+      "javascript": 2
+    },
+    "totalFiles": {
+      "estimated": 2800,
+      "scanned": 380,
+      "documented": 120
+    }
+  },
+  "gaps": [
+    {
+      "module": "extensions-web",
+      "type": "tests_missing",
+      "description": "缺少扩展系统的测试用例"
+    },
+    {
+      "module": "extensions",
+      "type": "tests_missing",
+      "description": "桌面端扩展缺少单元测试"
+    },
+    {
+      "module": "docs",
+      "type": "tests_missing",
+      "description": "文档站点缺少自动化测试"
+    },
+    {
+      "module": "scripts",
+      "type": "tests_missing",
+      "description": "构建脚本缺少测试覆盖"
+    }
+  ],
+  "nextSteps": [
+    "为 extensions-web 添加单元测试",
+    "为桌面端扩展系统添加集成测试",
+    "为文档站点添加链接检查和构建测试",
+    "为构建脚本添加自动化验证",
+    "优化 web-app 的服务层架构文档"
+  ],
+  "ignoreRules": [
+    "node_modules/**",
+    ".git/**",
+    ".github/**",
+    "dist/**",
+    "build/**",
+    ".next/**",
+    "__pycache__/**",
+    "*.lock",
+    "*.log",
+    "*.bin",
+    "*.pdf",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif",
+    "*.mp4",
+    "*.zip",
+    "*.tar",
+    "*.gz",
+    "target/**",
+    ".yarn/**",
+    "coverage/**",
+    "test-data/**",
+    "llm-docs/**"
+  ],
+  "truncated": false,
+  "truncatedReason": null
+}

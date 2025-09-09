@@ -29,7 +29,9 @@ export default class JanProviderWeb extends AIEngine {
       console.log('Jan Provider Extension loaded successfully')
     } catch (error) {
       console.error('Failed to load Jan Provider Extension:', error)
-      throw error
+      // Don't throw error in web mode - just log it
+      // This allows the extension to load even if the API is unavailable
+      console.warn('Continuing without Jan API - models will not be available')
     }
 
     super.onLoad()

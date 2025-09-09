@@ -24,7 +24,7 @@ function LogsViewerGuarded() {
 
 function LogsViewer() {
   const { t } = useTranslation()
-  const [logs, setLogs] = useState<LogEntry[]>([])
+  const [logs, setLogs] = useState<import('@/types/app').LogEntry[]>([])
   const logsContainerRef = useRef<HTMLDivElement>(null)
   const serviceHub = useServiceHub()
 
@@ -33,7 +33,7 @@ function LogsViewer() {
     function updateLogs() {
       serviceHub.app().readLogs().then((logData) => {
         let needScroll = false
-        const filteredLogs = logData.filter(Boolean) as LogEntry[]
+        const filteredLogs = logData.filter(Boolean) as import('@/types/app').LogEntry[]
         if (filteredLogs.length > lastLogsLength) needScroll = true
 
         lastLogsLength = filteredLogs.length

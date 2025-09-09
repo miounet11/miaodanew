@@ -24,7 +24,7 @@ export default function LanguageSwitcher() {
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng)
-    setCurrentLanguage(lng as Language)
+    setCurrentLanguage(lng as import('@/types/app').Language)
   }
 
   return (

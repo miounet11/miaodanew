@@ -1,4 +1,4 @@
-# Contributing to Jan Web App
+# Contributing to Miaoda Web App
 
 [← Back to Main Contributing Guide](../CONTRIBUTING.md)
 
