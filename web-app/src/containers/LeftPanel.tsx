@@ -478,6 +478,16 @@ const LeftPanel = () => {
           </div>
 
           <div className="space-y-1 shrink-0 py-1 mt-2">
+            {/* Miaoda Logo */}
+            <div className="mb-3 px-1">
+              <div className="flex items-center gap-2 py-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-sm">M</span>
+                </div>
+                <span className="text-left-panel-fg font-bold text-lg tracking-wide">Miaoda</span>
+              </div>
+            </div>
+            
             {mainMenus.map((menu) => {
               if (!menu.isEnabled) {
                   return null

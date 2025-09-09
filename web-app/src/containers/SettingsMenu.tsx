@@ -8,6 +8,8 @@ import {
   IconMenu2,
   IconX,
   IconSettings,
+  IconWorld,
+  IconExternalLink,
 } from '@tabler/icons-react'
 import { useMatches, useNavigate } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
@@ -225,8 +227,10 @@ const SettingsMenu = () => {
                       <div key={provider.provider}>
                         <div
                           className={cn(
-                            'group flex px-3 py-2 items-center gap-2.5 cursor-pointer hover:bg-main-view-fg/6 w-full rounded-lg transition-all duration-200 ease-in-out text-main-view-fg/75',
+                            'group flex px-3 py-2 items-center gap-2.5 cursor-pointer hover:bg-main-view-fg/6 w-full rounded-lg transition-all duration-200 ease-in-out text-main-view-fg/75 relative',
                             isActive && 'bg-main-view-fg/8 border-l-2 border-blue-500/50 shadow-sm',
+                            // Special styling for Miaoda provider - free service
+                            provider.provider === 'openai-compatible' && 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 hover:from-blue-500/15 hover:to-blue-600/15 border border-blue-500/20',
                             // hidden for llama.cpp provider for setup remote provider
                             provider.provider === 'llama.cpp' &&
                               stepSetupRemoteProvider &&
@@ -250,6 +254,11 @@ const SettingsMenu = () => {
                               {getProviderTitle(provider.provider)}
                             </span>
                           </div>
+                          {provider.provider === 'openai-compatible' && (
+                            <span className="absolute top-1 right-2 text-[10px] font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2 py-0.5 rounded-full shadow-sm">
+                              FREE
+                            </span>
+                          )}
                         </div>
                       </div>
                     )
@@ -260,6 +269,22 @@ const SettingsMenu = () => {
             )
           })}
           </div>
+        </div>
+        
+        {/* 官方网站链接 */}
+        <div className="mt-auto px-3 py-3 border-t border-main-view-fg/8">
+          <a
+            href="https://www.miaoda.xin"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-blue-600/10 transition-all duration-200 group"
+          >
+            <IconWorld size={18} className="text-main-view-fg/50 group-hover:text-blue-500" />
+            <span className="text-sm font-medium text-main-view-fg/70 group-hover:text-blue-500">
+              访问官网
+            </span>
+            <IconExternalLink size={14} className="text-main-view-fg/30 group-hover:text-blue-500 ml-auto" />
+          </a>
         </div>
       </div>
     </>

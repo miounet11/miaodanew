@@ -14,13 +14,20 @@ import {
 } from '@/components/ui/tooltip'
 import { ArrowRight } from 'lucide-react'
 import {
-  IconPhoto,
   IconWorld,
   IconAtom,
   IconTool,
   IconCodeCircle2,
   IconPlayerStopFilled,
   IconX,
+  IconFile,
+  IconFileTypePdf,
+  IconFileTypeDoc,
+  IconFileTypeXls,
+  IconFileTypePpt,
+  IconFileCode,
+  IconFileText,
+  IconPaperclip,
 } from '@tabler/icons-react'
 import { useTranslation } from '@/i18n/react-i18next-compat'
 import { useGeneralSetting } from '@/hooks/useGeneralSetting'
@@ -98,33 +105,47 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
     return () => clearInterval(intervalId)
   }, [serviceHub])
 
-  // Check for mmproj existence or vision capability when model changes
+  // Check for file upload support - enable for most modern models
   useEffect(() => {
-    const checkMmprojSupport = async () => {
+    const checkFileUploadSupport = async () => {
       if (selectedModel && selectedModel?.id) {
         try {
-          // Only check mmproj for llamacpp provider
+          // Check for llamacpp provider with mmproj
           if (selectedProvider === 'llamacpp') {
             const hasLocalMmproj = await serviceHub.models().checkMmprojExists(selectedModel.id)
             setHasMmproj(hasLocalMmproj)
           }
-          // For non-llamacpp providers, only check vision capability
+          // Enable for models with vision capability
+          else if (selectedModel?.capabilities?.includes('vision')) {
+            setHasMmproj(true)
+          }
+          // Enable for popular AI models that support multimodal input
           else if (
-            selectedProvider !== 'llamacpp' &&
-            selectedModel?.capabilities?.includes('vision')
+            selectedProvider === 'openai' ||
+            selectedProvider === 'openai-compatible' ||
+            selectedProvider === 'anthropic' ||
+            selectedProvider === 'gemini' ||
+            selectedProvider === 'openrouter' ||
+            // Check if model ID contains indicators of multimodal support
+            selectedModel.id?.toLowerCase().includes('gpt-4') ||
+            selectedModel.id?.toLowerCase().includes('claude') ||
+            selectedModel.id?.toLowerCase().includes('gemini') ||
+            selectedModel.id?.toLowerCase().includes('grok') ||
+            selectedModel.id?.toLowerCase().includes('vision') ||
+            selectedModel.id?.toLowerCase().includes('multimodal')
           ) {
             setHasMmproj(true)
           } else {
             setHasMmproj(false)
           }
         } catch (error) {
-          console.error('Error checking mmproj:', error)
+          console.error('Error checking file upload support:', error)
           setHasMmproj(false)
         }
       }
     }
 
-    checkMmprojSupport()
+    checkFileUploadSupport()
   }, [selectedModel, selectedModel?.capabilities, selectedProvider, serviceHub])
 
   // Check if there are active MCP servers
@@ -219,16 +240,103 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
     )
   }
 
+  const getFileIcon = (type: string, fileName: string) => {
+    const extension = fileName.toLowerCase().split('.').pop()
+    
+    // Check for specific file types
+    if (type === 'application/pdf') return IconFileTypePdf
+    if (type.includes('word') || extension === 'doc' || extension === 'docx') return IconFileTypeDoc
+    if (type.includes('excel') || type.includes('spreadsheet') || extension === 'xls' || extension === 'xlsx') return IconFileTypeXls
+    if (type.includes('powerpoint') || type.includes('presentation') || extension === 'ppt' || extension === 'pptx') return IconFileTypePpt
+    
+    // Check for code files
+    const codeExtensions = ['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'go', 'rs', 'php', 'rb', 'swift', 'kt', 'scala', 'r', 'sql', 'sh', 'bash', 'ps1', 'yaml', 'yml', 'json', 'xml', 'html', 'css', 'scss', 'less', 'vue', 'dart']
+    if (codeExtensions.includes(extension || '')) return IconFileCode
+    
+    // Check for text files
+    if (type.includes('text') || extension === 'txt' || extension === 'md') return IconFileText
+    
+    // Default file icon
+    return IconFile
+  }
+
+  const formatFileSize = (size: number) => {
+    if (size < 1024) return `${size} B`
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`
+  }
+
   const getFileTypeFromExtension = (fileName: string): string => {
     const extension = fileName.toLowerCase().split('.').pop()
     switch (extension) {
+      // Image formats
       case 'jpg':
       case 'jpeg':
         return 'image/jpeg'
       case 'png':
         return 'image/png'
+      case 'gif':
+        return 'image/gif'
+      case 'webp':
+        return 'image/webp'
+      case 'bmp':
+        return 'image/bmp'
+      // Document formats
+      case 'pdf':
+        return 'application/pdf'
+      case 'txt':
+        return 'text/plain'
+      case 'md':
+        return 'text/markdown'
+      case 'doc':
+        return 'application/msword'
+      case 'docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      case 'xls':
+        return 'application/vnd.ms-excel'
+      case 'xlsx':
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      case 'ppt':
+        return 'application/vnd.ms-powerpoint'
+      case 'pptx':
+        return 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      case 'csv':
+        return 'text/csv'
+      case 'json':
+        return 'application/json'
+      case 'xml':
+        return 'application/xml'
+      // Code files
+      case 'js':
+      case 'jsx':
+      case 'ts':
+      case 'tsx':
+      case 'py':
+      case 'java':
+      case 'cpp':
+      case 'c':
+      case 'cs':
+      case 'go':
+      case 'rs':
+      case 'php':
+      case 'rb':
+      case 'swift':
+      case 'kt':
+      case 'scala':
+      case 'r':
+      case 'sql':
+      case 'sh':
+      case 'bash':
+      case 'ps1':
+      case 'yaml':
+      case 'yml':
+      case 'toml':
+      case 'ini':
+      case 'conf':
+      case 'cfg':
+        return 'text/plain'
       default:
-        return ''
+        return 'application/octet-stream'
     }
   }
 
@@ -260,18 +368,35 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
         const detectedType = file.type || getFileTypeFromExtension(file.name)
         const actualType = getFileTypeFromExtension(file.name) || detectedType
 
-        // Check file type - images only
-        const allowedTypes = ['image/jpg', 'image/jpeg', 'image/png']
+        // Check file type - allow images and documents
+        const allowedImageTypes = [
+          'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
+          'image/webp', 'image/bmp'
+        ]
+        const allowedDocTypes = [
+          'application/pdf', 'text/plain', 'text/markdown',
+          'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'text/csv', 'application/json', 'application/xml'
+        ]
+        const allowedTypes = [...allowedImageTypes, ...allowedDocTypes]
 
         if (!allowedTypes.includes(actualType)) {
-          setMessage(
-            `File attachments not supported currently. Only JPEG, JPG, and PNG files are allowed.`
-          )
-          // Reset file input to allow re-uploading
-          if (fileInputRef.current) {
-            fileInputRef.current.value = ''
+          // Check if it's a code/text file by extension
+          const extension = file.name.toLowerCase().split('.').pop()
+          const codeExtensions = ['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'go', 'rs', 'php', 'rb', 'swift', 'kt', 'scala', 'r', 'sql', 'sh', 'bash', 'ps1', 'yaml', 'yml', 'toml', 'ini', 'conf', 'cfg', 'html', 'css', 'scss', 'less', 'vue', 'dart']
+          
+          if (!codeExtensions.includes(extension || '')) {
+            setMessage(
+              `不支持的文件类型。支持图片（JPG、PNG、GIF等）、文档（PDF、Word、Excel等）和代码文件。`
+            )
+            // Reset file input to allow re-uploading
+            if (fileInputRef.current) {
+              fileInputRef.current.value = ''
+            }
+            return
           }
-          return
         }
 
         const reader = new FileReader()
@@ -513,28 +638,44 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
             onDrop={hasMmproj ? handleDrop : undefined}
           >
             {uploadedFiles.length > 0 && (
-              <div className="flex gap-3 items-center p-2 pb-0">
+              <div className="flex gap-3 items-center p-2 pb-0 flex-wrap">
                 {uploadedFiles.map((file, index) => {
+                  const FileIcon = getFileIcon(file.type, file.name)
+                  const isImage = file.type.startsWith('image/')
+                  
                   return (
                     <div
                       key={index}
                       className={cn(
-                        'relative border border-main-view-fg/5 rounded-lg',
-                        file.type.startsWith('image/') ? 'size-14' : 'h-14 '
+                        'relative border border-main-view-fg/10 rounded-lg hover:border-main-view-fg/20 transition-colors',
+                        isImage ? 'size-14' : 'px-3 py-2 min-w-[120px] max-w-[200px]'
                       )}
+                      title={`${file.name} (${formatFileSize(file.size)})`}
                     >
-                      {file.type.startsWith('image/') && (
+                      {isImage ? (
                         <img
                           className="object-cover w-full h-full rounded-lg"
                           src={file.dataUrl}
                           alt={`${file.name} - ${index}`}
                         />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <FileIcon size={20} className="text-main-view-fg/60 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium text-main-view-fg/80 truncate">
+                              {file.name}
+                            </div>
+                            <div className="text-xs text-main-view-fg/50">
+                              {formatFileSize(file.size)}
+                            </div>
+                          </div>
+                        </div>
                       )}
                       <div
-                        className="absolute -top-1 -right-2.5 bg-destructive size-5 flex rounded-full items-center justify-center cursor-pointer"
+                        className="absolute -top-1 -right-1 bg-destructive size-5 flex rounded-full items-center justify-center cursor-pointer hover:scale-110 transition-transform"
                         onClick={() => handleRemoveFile(index)}
                       >
-                        <IconX className="text-destructive-fg" size={16} />
+                        <IconX className="text-destructive-fg" size={14} />
                       </div>
                     </div>
                   )
@@ -604,16 +745,16 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
                     useLastUsedModel={initialMessage}
                   />
                 )}
-                {/* File attachment - show only for models with mmproj */}
+                {/* File attachment - show for supported models */}
                 {hasMmproj && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div
-                          className="h-7 p-1 flex items-center justify-center rounded-sm hover:bg-main-view-fg/10 transition-all duration-200 ease-in-out gap-1"
+                          className="h-7 p-1 flex items-center justify-center rounded-sm hover:bg-main-view-fg/10 transition-all duration-200 ease-in-out gap-1 cursor-pointer"
                           onClick={handleAttachmentClick}
                         >
-                          <IconPhoto
+                          <IconPaperclip
                             size={18}
                             className="text-main-view-fg/50"
                           />
@@ -623,11 +764,12 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
                             className="hidden"
                             multiple
                             onChange={handleFileChange}
+                            accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.json,.xml,.html,.css,.js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb,.swift,.kt,.scala,.r,.sql,.sh,.bash,.ps1,.yaml,.yml,.toml,.ini,.conf,.cfg"
                           />
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{t('vision')}</p>
+                        <p>上传文件（图片、文档、代码）</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

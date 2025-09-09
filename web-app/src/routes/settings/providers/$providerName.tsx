@@ -15,6 +15,7 @@ import { DynamicControllerSetting } from '@/containers/dynamicControllerSetting'
 import { RenderMarkdown } from '@/containers/RenderMarkdown'
 import { DialogEditModel } from '@/containers/dialogs/EditModel'
 import { DialogAddModel } from '@/containers/dialogs/AddModel'
+import { ModelDiscovery } from '@/containers/dialogs/ModelDiscovery'
 import { ModelSetting } from '@/containers/ModelSetting'
 import { DialogDeleteModel } from '@/containers/dialogs/DeleteModel'
 import { FavoriteModelAction } from '@/containers/FavoriteModelAction'
@@ -247,6 +248,25 @@ function ProviderDetail() {
       })
     } finally {
       setRefreshingModels(false)
+    }
+  }
+
+  const handleModelsAdded = (newModels: Model[]) => {
+    if (!provider) return
+
+    // Filter out models that already exist
+    const existingModelIds = provider.models.map((m) => m.id)
+    const modelsToAdd = newModels.filter(
+      (model) => !existingModelIds.includes(model.id)
+    )
+
+    if (modelsToAdd.length > 0) {
+      // Update the provider with new models
+      const updatedModels = [...provider.models, ...modelsToAdd]
+      updateProvider(providerName, {
+        ...provider,
+        models: updatedModels,
+      })
     }
   }
 
@@ -522,32 +542,38 @@ function ProviderDetail() {
                             {!predefinedProviders.some(
                               (p) => p.provider === provider.provider
                             ) && (
-                              <Button
-                                variant="link"
-                                size="sm"
-                                className="hover:no-underline"
-                                onClick={handleRefreshModels}
-                                disabled={refreshingModels}
-                              >
-                                <div className="cursor-pointer flex items-center justify-center rounded hover:bg-main-view-fg/15 bg-main-view-fg/10 transition-all duration-200 ease-in-out px-1.5 py-1 gap-1">
-                                  {refreshingModels ? (
-                                    <IconLoader
-                                      size={18}
-                                      className="text-main-view-fg/50 animate-spin"
-                                    />
-                                  ) : (
-                                    <IconRefresh
-                                      size={18}
-                                      className="text-main-view-fg/50"
-                                    />
-                                  )}
-                                  <span className="text-main-view-fg/70">
-                                    {refreshingModels
-                                      ? t('providers:refreshing')
-                                      : t('providers:refresh')}
-                                  </span>
-                                </div>
-                              </Button>
+                              <>
+                                <ModelDiscovery
+                                  provider={provider}
+                                  onModelsAdded={handleModelsAdded}
+                                />
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="hover:no-underline"
+                                  onClick={handleRefreshModels}
+                                  disabled={refreshingModels}
+                                >
+                                  <div className="cursor-pointer flex items-center justify-center rounded hover:bg-main-view-fg/15 bg-main-view-fg/10 transition-all duration-200 ease-in-out px-1.5 py-1 gap-1">
+                                    {refreshingModels ? (
+                                      <IconLoader
+                                        size={18}
+                                        className="text-main-view-fg/50 animate-spin"
+                                      />
+                                    ) : (
+                                      <IconRefresh
+                                        size={18}
+                                        className="text-main-view-fg/50"
+                                      />
+                                    )}
+                                    <span className="text-main-view-fg/70">
+                                      {refreshingModels
+                                        ? t('providers:refreshing')
+                                        : t('providers:refresh')}
+                                    </span>
+                                  </div>
+                                </Button>
+                              </>
                             )}
                             <DialogAddModel provider={provider} />
                           </>

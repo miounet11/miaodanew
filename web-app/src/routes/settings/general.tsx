@@ -453,6 +453,22 @@ function General() {
             {/* Resources */}
             <Card title={t('settings:general.resources')}>
               <CardItem
+                title="官方网站"
+                description="访问 Miaoda 官方网站，了解更多功能和服务"
+                actions={
+                  <a
+                    href="https://www.miaoda.xin"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <div className="flex items-center gap-1 text-blue-500 hover:text-blue-600">
+                      <span>访问官网</span>
+                      <IconExternalLink size={14} />
+                    </div>
+                  </a>
+                }
+              />
+              <CardItem
                 title={t('settings:general.documentation')}
                 description={t('settings:general.documentationDesc')}
                 actions={
@@ -556,12 +572,12 @@ function General() {
                     <p className="mt-2">{t('settings:general.creditsDesc3')}</p>
                     <p className="mt-2">
                       <a
-                        href="https://jan.ai"
+                        href="https://www.miaoda.xin"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-accent hover:underline"
                       >
-                        Learn more about jan.ai →
+                        Learn more about miaoda.xin →
                       </a>
                     </p>
                   </div>
