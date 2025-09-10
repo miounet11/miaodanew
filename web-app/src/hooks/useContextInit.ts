@@ -80,7 +80,7 @@ export function useContextInit() {
           addRule({
             name: `项目规则 ${index + 1}`,
             description: '从 CLAUDE.md 导入的规则',
-            type: 'project',
+            type: 'global',
             content: ruleText,
             priority: 5,
             active: true,
@@ -101,7 +101,7 @@ export function useContextInit() {
         addRule({
           name: '项目重要指令',
           description: '从 CLAUDE.md 导入的重要指令',
-          type: 'project',
+          type: 'global',
           content: instructionsContent.slice(0, 500), // 限制长度
           priority: 1,
           active: true,

@@ -82,7 +82,7 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
 
   const { selectedModel, selectedProvider } = useModelProvider()
   const { sendMessage } = useChat()
-  const { activeThreadId } = useThreads()
+  const { currentThreadId: activeThreadId } = useThreads()
   const [message, setMessage] = useState('')
   const [dropdownToolsAvailable, setDropdownToolsAvailable] = useState(false)
   const [tooltipToolsAvailable, setTooltipToolsAvailable] = useState(false)
@@ -90,10 +90,15 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
   // 智能上下文管理
   const { 
     togglePanel, 
-    isPanelOpen,
+    getPanelState,
     getActiveRules,
-    resources 
+    resources,
+    toggleContextEnabled,
+    isContextEnabled,
   } = useContextManager()
+  
+  // 获取当前线程的面板状态
+  const { isPanelOpen } = activeThreadId ? getPanelState(activeThreadId) : { isPanelOpen: false }
   const [uploadedFiles, setUploadedFiles] = useState<
     Array<{
       name: string
@@ -227,8 +232,8 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
     // 获取展开的完整消息内容
     let fullMessage = getFullMessageContent(prompt)
     
-    // 获取当前线程的总结并添加到消息中（如果存在）
-    if (activeThreadId) {
+    // 获取当前线程的总结并添加到消息中（仅在智能上下文启用时）
+    if (activeThreadId && isContextEnabled(activeThreadId)) {
       const summaryContext = getSummaryForContext(activeThreadId, 1000)
       if (summaryContext) {
         // 将总结作为系统上下文添加到消息开头
@@ -379,6 +384,8 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
           name: item.name,
           path: item.path || item.server || '',
           pinned: false,
+          scope: 'thread',
+          threadId: activeThreadId || undefined
         })
       }
     }
@@ -682,6 +689,8 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
               name: file.name,
               path: file.name,
               pinned: false,
+              scope: 'thread',
+              threadId: activeThreadId || undefined
             })
           } catch (error) {
             console.error('Failed to read file:', error)
@@ -1209,31 +1218,71 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
       {/* 智能上下文按钮栏 - 类似 Claude.AI 设计 */}
       {!initialMessage && (
         <div className="flex items-center gap-2 mt-2 px-2">
-          <button
-            onClick={togglePanel}
-            className={cn(
-              'flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all',
-              'text-sm text-main-view-fg/70 hover:text-main-view-fg',
-              'border-main-view-fg/10 hover:border-main-view-fg/20',
-              'bg-main-view hover:bg-main-view-fg/5',
-              isPanelOpen && 'bg-main-view-fg/5 border-main-view-fg/20 text-main-view-fg'
-            )}
-          >
-            <IconBrain size={16} />
-            <span>智能上下文</span>
-            {(getActiveRules().length > 0 || resources.filter(r => r.pinned).length > 0) && (
-              <Badge variant="secondary" className="ml-1 px-1.5 py-0 h-5 text-xs">
-                {getActiveRules().length + resources.filter(r => r.pinned).length}
-              </Badge>
-            )}
-            <IconChevronRight 
-              size={14} 
+          <div className="flex items-center gap-2">
+            {/* 开关按钮 */}
+            <button
+              onClick={() => {
+                if (!activeThreadId) return
+                
+                const wasEnabled = isContextEnabled(activeThreadId)
+                toggleContextEnabled(activeThreadId)
+                
+                // 如果是首次开启智能上下文，自动展开面板
+                if (!wasEnabled) {
+                  const panelState = getPanelState(activeThreadId)
+                  if (!panelState.isPanelOpen) {
+                    togglePanel(activeThreadId)
+                  }
+                } else {
+                  // 如果是关闭智能上下文，自动隐藏面板
+                  const panelState = getPanelState(activeThreadId)
+                  if (panelState.isPanelOpen) {
+                    togglePanel(activeThreadId)
+                  }
+                }
+              }}
               className={cn(
-                'transition-transform',
-                isPanelOpen && 'rotate-180'
-              )} 
-            />
-          </button>
+                'flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all',
+                'text-sm',
+                'border-main-view-fg/10 hover:border-main-view-fg/20',
+                activeThreadId && isContextEnabled(activeThreadId)
+                  ? 'bg-green-500/10 border-green-500/30 text-green-600 hover:bg-green-500/15'
+                  : 'bg-main-view hover:bg-main-view-fg/5 text-main-view-fg/70 hover:text-main-view-fg'
+              )}
+              disabled={!activeThreadId}
+            >
+              <IconBrain size={16} />
+              <span>智能上下文: {activeThreadId && isContextEnabled(activeThreadId) ? '已启用' : '已关闭'}</span>
+            </button>
+            
+            {/* 展开面板按钮 */}
+            {activeThreadId && isContextEnabled(activeThreadId) && (
+              <button
+                onClick={() => activeThreadId && togglePanel(activeThreadId)}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all',
+                  'text-sm text-main-view-fg/70 hover:text-main-view-fg',
+                  'border-main-view-fg/10 hover:border-main-view-fg/20',
+                  'bg-main-view hover:bg-main-view-fg/5',
+                  isPanelOpen && 'bg-main-view-fg/5 border-main-view-fg/20 text-main-view-fg'
+                )}
+              >
+                <span>管理上下文</span>
+                {(getActiveRules(activeThreadId).length > 0 || resources.filter(r => r.pinned).length > 0) && (
+                  <Badge variant="secondary" className="ml-1 px-1.5 py-0 h-5 text-xs">
+                    {getActiveRules(activeThreadId).length + resources.filter(r => r.pinned).length}
+                  </Badge>
+                )}
+                <IconChevronRight 
+                  size={14} 
+                  className={cn(
+                    'transition-transform',
+                    isPanelOpen && 'rotate-180'
+                  )} 
+                />
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils'
 import {
   IconFile,
   IconFileCode,
-  IconDatabase,
   IconBulb,
   IconBook,
   IconHistory,
@@ -100,9 +99,9 @@ export function MentionSelector({
             allItems.push({
               id: `mcp-tool-${tool.name}`,
               type: 'mcp-tool',
-              name: tool.displayName || tool.name,
+              name: tool.name,
               description: tool.description,
-              server: tool.serverName,
+              server: tool.server,
               toolName: tool.name,
               metadata: tool,
             })

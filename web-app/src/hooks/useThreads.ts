@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { ulid } from 'ulidx'
 import { getServiceHub } from '@/hooks/useServiceHub'
 import { Fzf } from 'fzf'
+import { useContextManager } from '@/lib/contextManager'
 
 type ThreadState = {
   threads: Record<string, Thread>
@@ -115,6 +116,10 @@ export const useThreads = create<ThreadState>()((set, get) => ({
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [threadId]: _, ...remainingThreads } = state.threads
       getServiceHub().threads().deleteThread(threadId)
+      
+      // 清理智能上下文相关数据
+      useContextManager.getState().cleanupThread(threadId)
+      
       return {
         threads: remainingThreads,
         searchIndex: new Fzf<Thread[]>(Object.values(remainingThreads), {
@@ -136,6 +141,8 @@ export const useThreads = create<ThreadState>()((set, get) => ({
       // Only delete non-favorite threads
       nonFavoriteThreadIds.forEach((threadId) => {
         getServiceHub().threads().deleteThread(threadId)
+        // 清理智能上下文相关数据
+        useContextManager.getState().cleanupThread(threadId)
       })
 
       // Keep only favorite threads

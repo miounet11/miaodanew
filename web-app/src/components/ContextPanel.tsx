@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
-import { useContextManager } from '@/lib/contextManager'
+import { useContextManager, type Rule, type Resource } from '@/lib/contextManager'
 import {
   IconBrain,
   IconBook,
@@ -14,6 +14,10 @@ import {
   IconX,
   IconSettings,
   IconRefresh,
+  IconCheck,
+  IconGlobe,
+  IconMessage,
+  IconChevronDown,
 } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,30 +40,65 @@ interface ContextPanelProps {
 
 export function ContextPanel({ threadId, messages = [], className }: ContextPanelProps) {
   const {
-    currentSummary,
-    rules,
+    // rules, // 临时注释未使用的变量
     resources,
     knowledge,
-    isPanelOpen,
-    activeTab,
     generateSummary,
     updateSummary,
+    addRule,
+    updateRule,
     toggleRule,
     deleteRule,
+    // addResource, // 临时注释未使用的变量
+    updateResource,
+    removeResource,
     pinResource,
     unpinResource,
     togglePanel,
     setActiveTab,
+    getPanelState,
+    getCurrentSummary,
     getActiveRules,
+    getGlobalRules,
+    getThreadRules,
+    getGlobalResources,
+    getThreadResources,
+    isContextEnabled,
   } = useContextManager()
+  
+  // 获取当前线程的 UI 状态
+  const panelState = threadId ? getPanelState(threadId) : {
+    isPanelOpen: false,
+    activeTab: 'summary' as const,
+    currentSummary: null
+  }
+  const { isPanelOpen, activeTab } = panelState
+  const currentSummary = threadId ? getCurrentSummary(threadId) : null
 
   const [editingSummary, setEditingSummary] = useState(false)
   const [summaryText, setSummaryText] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null)
+  const [editingResourceId, setEditingResourceId] = useState<string | null>(null)
+  const [showGlobalRules, setShowGlobalRules] = useState(true)
+  const [showThreadRules, setShowThreadRules] = useState(true)
+  const [showGlobalResources, setShowGlobalResources] = useState(true)
+  const [showThreadResources, setShowThreadResources] = useState(true)
 
-  const activeRules = getActiveRules()
-  const pinnedResources = resources.filter(r => r.pinned)
-  const unpinnedResources = resources.filter(r => !r.pinned)
+  // 检查智能上下文是否开启 - 必须在数据获取之前
+  const contextEnabled = threadId ? isContextEnabled(threadId) : false
+  if (!contextEnabled || !isPanelOpen) {
+    return null
+  }
+
+  // 只有在智能上下文开启时才获取数据
+  const activeRules = getActiveRules(threadId)
+  const globalRules = getGlobalRules()
+  const threadRules = threadId ? getThreadRules(threadId) : []
+  const globalResources = getGlobalResources()
+  const threadResources = threadId ? getThreadResources(threadId) : []
+  // const pinnedResources = resources.filter(r => r.pinned) // 临时注释未使用的变量
+  // const unpinnedResources = resources.filter(r => !r.pinned) // 临时注释未使用的变量
 
   // 移除自动生成总结，改为用户手动触发
   // useEffect(() => {
@@ -90,10 +129,6 @@ export function ContextPanel({ threadId, messages = [], className }: ContextPane
       updateSummary(currentSummary.id, summaryText)
       setEditingSummary(false)
     }
-  }
-
-  if (!isPanelOpen) {
-    return null // 按钮已移到输入框下方
   }
 
   return (
@@ -136,7 +171,7 @@ export function ContextPanel({ threadId, messages = [], className }: ContextPane
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  onClick={togglePanel}
+                  onClick={() => threadId && togglePanel(threadId)}
                 >
                   <IconX className="w-4 h-4" />
                 </Button>
@@ -148,7 +183,7 @@ export function ContextPanel({ threadId, messages = [], className }: ContextPane
       </div>
 
       {/* 标签页 */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col h-[calc(100%-64px)]">
+      <Tabs value={activeTab} onValueChange={(v) => threadId && setActiveTab(threadId, v as any)} className="flex-1 flex flex-col h-[calc(100%-64px)]">
         <TabsList className="grid w-full grid-cols-4 p-1">
           <TabsTrigger value="summary" className="text-xs">
             <IconBrain className="w-3 h-3 mr-1" />
@@ -308,63 +343,102 @@ export function ContextPanel({ threadId, messages = [], className }: ContextPane
         {/* 规则标签页 */}
         <TabsContent value="rules" className="flex-1 flex flex-col">
           <div className="flex-1 overflow-y-auto">
-            <div className="p-4 space-y-3">
-              {rules.map((rule) => (
-                <div
-                  key={rule.id}
-                  className={cn(
-                    "p-3 rounded-lg border transition-all",
-                    rule.active
-                      ? "bg-main-view-fg/5 border-main-view-fg/20"
-                      : "bg-main-view-fg/[0.02] border-main-view-fg/10"
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h5 className="text-sm font-medium text-main-view-fg">
-                          {rule.name}
-                        </h5>
-                        <Badge
-                          variant={rule.type === 'global' ? 'default' : 'secondary'}
-                          className="text-[10px] px-1 h-4"
-                        >
-                          {rule.type === 'global' ? '全局' : rule.type === 'project' ? '项目' : '对话'}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-main-view-fg/60">
-                        {rule.description}
-                      </p>
-                      <p className="text-xs text-main-view-fg/80 italic">
-                        "{rule.content}"
-                      </p>
+            <div className="p-4 space-y-4">
+              {/* 全局规则 */}
+              {globalRules.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <IconGlobe className="w-4 h-4 text-main-view-fg/60" />
+                      <h4 className="text-xs font-medium text-main-view-fg/60 uppercase">全局规则</h4>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Switch
-                        checked={rule.active}
-                        onCheckedChange={() => toggleRule(rule.id)}
-                        className="scale-75"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => deleteRule(rule.id)}
-                      >
-                        <IconTrash className="w-3 h-3" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={() => setShowGlobalRules(!showGlobalRules)}
+                    >
+                      <IconChevronDown className={cn("w-3 h-3 transition-transform", !showGlobalRules && "-rotate-90")} />
+                    </Button>
                   </div>
+                  {showGlobalRules && globalRules.map((rule) => (
+                    <RuleItem
+                      key={rule.id}
+                      rule={rule}
+                      isEditing={editingRuleId === rule.id}
+                      onToggle={() => toggleRule(rule.id)}
+                      onEdit={() => setEditingRuleId(rule.id)}
+                      onSave={(updates) => {
+                        updateRule(rule.id, updates)
+                        setEditingRuleId(null)
+                      }}
+                      onCancel={() => setEditingRuleId(null)}
+                      onDelete={() => deleteRule(rule.id)}
+                    />
+                  ))}
                 </div>
-              ))}
+              )}
+              
+              {/* 对话规则 */}
+              {threadId && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <IconMessage className="w-4 h-4 text-main-view-fg/60" />
+                      <h4 className="text-xs font-medium text-main-view-fg/60 uppercase">对话规则</h4>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={() => setShowThreadRules(!showThreadRules)}
+                    >
+                      <IconChevronDown className={cn("w-3 h-3 transition-transform", !showThreadRules && "-rotate-90")} />
+                    </Button>
+                  </div>
+                  {showThreadRules && (
+                    <>
+                      {threadRules.map((rule) => (
+                        <RuleItem
+                          key={rule.id}
+                          rule={rule}
+                          isEditing={editingRuleId === rule.id}
+                          onToggle={() => toggleRule(rule.id)}
+                          onEdit={() => setEditingRuleId(rule.id)}
+                          onSave={(updates) => {
+                            updateRule(rule.id, updates)
+                            setEditingRuleId(null)
+                          }}
+                          onCancel={() => setEditingRuleId(null)}
+                          onDelete={() => deleteRule(rule.id)}
+                        />
+                      ))}
+                      {threadRules.length === 0 && (
+                        <p className="text-xs text-main-view-fg/40 text-center py-2">
+                          暂无对话规则
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
               
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full text-xs"
                 onClick={() => {
-                  // TODO: 打开添加规则对话框
-                  console.log('Add rule')
+                  const newRule = {
+                    name: '新规则',
+                    description: '规则描述',
+                    type: (threadId ? 'thread' : 'global') as 'global' | 'thread',
+                    threadId: threadId || undefined,
+                    content: '规则内容',
+                    priority: 0,
+                    active: true,
+                    editable: true,
+                  }
+                  addRule(newRule)
                 }}
               >
                 <IconPlus className="w-3 h-3 mr-1" />
@@ -377,34 +451,74 @@ export function ContextPanel({ threadId, messages = [], className }: ContextPane
         {/* 资源标签页 */}
         <TabsContent value="resources" className="flex-1 flex flex-col">
           <div className="flex-1 overflow-y-auto">
-            <div className="p-4 space-y-3">
-              {/* 固定资源 */}
-              {pinnedResources.length > 0 && (
+            <div className="p-4 space-y-4">
+              {/* 全局资源 */}
+              {globalResources.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-medium text-main-view-fg/60 uppercase">固定</h4>
-                  {pinnedResources.map((resource) => (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <IconGlobe className="w-4 h-4 text-main-view-fg/60" />
+                      <h4 className="text-xs font-medium text-main-view-fg/60 uppercase">全局资源</h4>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={() => setShowGlobalResources(!showGlobalResources)}
+                    >
+                      <IconChevronDown className={cn("w-3 h-3 transition-transform", !showGlobalResources && "-rotate-90")} />
+                    </Button>
+                  </div>
+                  {showGlobalResources && globalResources.map((resource) => (
                     <ResourceItem
                       key={resource.id}
                       resource={resource}
-                      onPin={() => unpinResource(resource.id)}
-                      isPinned={true}
+                      isEditing={editingResourceId === resource.id}
+                      onEdit={() => setEditingResourceId(resource.id)}
+                      onSave={(updates) => {
+                        updateResource(resource.id, updates)
+                        setEditingResourceId(null)
+                      }}
+                      onCancel={() => setEditingResourceId(null)}
+                      onPin={() => resource.pinned ? unpinResource(resource.id) : pinResource(resource.id)}
+                      onDelete={() => removeResource(resource.id)}
+                      isPinned={resource.pinned}
                     />
                   ))}
                 </div>
               )}
               
-              {/* 其他资源 */}
-              {unpinnedResources.length > 0 && (
+              {/* 对话资源 */}
+              {threadId && threadResources.length > 0 && (
                 <div className="space-y-2">
-                  {pinnedResources.length > 0 && (
-                    <h4 className="text-xs font-medium text-main-view-fg/60 uppercase">其他</h4>
-                  )}
-                  {unpinnedResources.map((resource) => (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <IconMessage className="w-4 h-4 text-main-view-fg/60" />
+                      <h4 className="text-xs font-medium text-main-view-fg/60 uppercase">对话资源</h4>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={() => setShowThreadResources(!showThreadResources)}
+                    >
+                      <IconChevronDown className={cn("w-3 h-3 transition-transform", !showThreadResources && "-rotate-90")} />
+                    </Button>
+                  </div>
+                  {showThreadResources && threadResources.map((resource) => (
                     <ResourceItem
                       key={resource.id}
                       resource={resource}
-                      onPin={() => pinResource(resource.id)}
-                      isPinned={false}
+                      isEditing={editingResourceId === resource.id}
+                      onEdit={() => setEditingResourceId(resource.id)}
+                      onSave={(updates) => {
+                        updateResource(resource.id, updates)
+                        setEditingResourceId(null)
+                      }}
+                      onCancel={() => setEditingResourceId(null)}
+                      onPin={() => resource.pinned ? unpinResource(resource.id) : pinResource(resource.id)}
+                      onDelete={() => removeResource(resource.id)}
+                      isPinned={resource.pinned}
                     />
                   ))}
                 </div>
@@ -485,16 +599,182 @@ export function ContextPanel({ threadId, messages = [], className }: ContextPane
   )
 }
 
+// 规则项组件
+function RuleItem({
+  rule,
+  isEditing,
+  onToggle,
+  onEdit,
+  onSave,
+  onCancel,
+  onDelete,
+}: {
+  rule: Rule
+  isEditing: boolean
+  onToggle: () => void
+  onEdit: () => void
+  onSave: (updates: Partial<Rule>) => void
+  onCancel: () => void
+  onDelete: () => void
+}) {
+  const [editData, setEditData] = useState({
+    name: rule.name,
+    description: rule.description,
+    content: rule.content,
+  })
+
+  useEffect(() => {
+    if (isEditing) {
+      setEditData({
+        name: rule.name,
+        description: rule.description,
+        content: rule.content,
+      })
+    }
+  }, [isEditing, rule])
+
+  if (isEditing) {
+    return (
+      <div className="p-3 rounded-lg border bg-main-view-fg/5 border-main-view-fg/20 space-y-2">
+        <input
+          type="text"
+          value={editData.name}
+          onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+          className="w-full px-2 py-1 text-sm bg-main-view-fg/5 border border-main-view-fg/10 rounded focus:outline-none focus:ring-1 focus:ring-main-view-fg/20"
+          placeholder="规则名称"
+        />
+        <input
+          type="text"
+          value={editData.description}
+          onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+          className="w-full px-2 py-1 text-xs bg-main-view-fg/5 border border-main-view-fg/10 rounded focus:outline-none focus:ring-1 focus:ring-main-view-fg/20"
+          placeholder="规则描述"
+        />
+        <TextareaAutosize
+          value={editData.content}
+          onChange={(e) => setEditData({ ...editData, content: e.target.value })}
+          className="w-full px-2 py-1 text-xs bg-main-view-fg/5 border border-main-view-fg/10 rounded resize-none focus:outline-none focus:ring-1 focus:ring-main-view-fg/20"
+          placeholder="规则内容"
+          minRows={2}
+          maxRows={5}
+        />
+        <div className="flex justify-end gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onCancel}
+            className="h-6 text-xs"
+          >
+            取消
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => onSave(editData)}
+            className="h-6 text-xs"
+          >
+            <IconCheck className="w-3 h-3 mr-1" />
+            保存
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={cn(
+        "p-3 rounded-lg border transition-all",
+        rule.active
+          ? "bg-main-view-fg/5 border-main-view-fg/20"
+          : "bg-main-view-fg/[0.02] border-main-view-fg/10"
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <h5 className="text-sm font-medium text-main-view-fg">
+              {rule.name}
+            </h5>
+            <Badge
+              variant={rule.type === 'global' ? 'default' : 'secondary'}
+              className="text-[10px] px-1 h-4"
+            >
+              {rule.type === 'global' ? '全局' : '对话'}
+            </Badge>
+          </div>
+          <p className="text-xs text-main-view-fg/60">
+            {rule.description}
+          </p>
+          <p className="text-xs text-main-view-fg/80 italic">
+            "{rule.content}"
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          <Switch
+            checked={rule.active}
+            onCheckedChange={onToggle}
+            className="scale-75"
+          />
+          {rule.editable !== false && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={onEdit}
+            >
+              <IconEdit className="w-3 h-3" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={onDelete}
+          >
+            <IconTrash className="w-3 h-3" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // 资源项组件
 function ResourceItem({
   resource,
+  isEditing,
+  onEdit,
+  onSave,
+  onCancel,
   onPin,
+  onDelete,
   isPinned,
 }: {
-  resource: any
+  resource: Resource
+  isEditing: boolean
+  onEdit: () => void
+  onSave: (updates: Partial<Resource>) => void
+  onCancel: () => void
   onPin: () => void
+  onDelete: () => void
   isPinned: boolean
 }) {
+  const [editData, setEditData] = useState({
+    name: resource.name,
+    path: resource.path || '',
+    content: resource.content || '',
+  })
+
+  useEffect(() => {
+    if (isEditing) {
+      setEditData({
+        name: resource.name,
+        path: resource.path || '',
+        content: resource.content || '',
+      })
+    }
+  }, [isEditing, resource])
+
   const getResourceIcon = () => {
     switch (resource.type) {
       case 'file':
@@ -506,27 +786,106 @@ function ResourceItem({
     }
   }
 
+  if (isEditing) {
+    return (
+      <div className="p-3 rounded-lg border bg-main-view-fg/5 border-main-view-fg/20 space-y-2">
+        <input
+          type="text"
+          value={editData.name}
+          onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+          className="w-full px-2 py-1 text-sm bg-main-view-fg/5 border border-main-view-fg/10 rounded focus:outline-none focus:ring-1 focus:ring-main-view-fg/20"
+          placeholder="资源名称"
+        />
+        {resource.type === 'file' && (
+          <input
+            type="text"
+            value={editData.path}
+            onChange={(e) => setEditData({ ...editData, path: e.target.value })}
+            className="w-full px-2 py-1 text-xs bg-main-view-fg/5 border border-main-view-fg/10 rounded focus:outline-none focus:ring-1 focus:ring-main-view-fg/20"
+            placeholder="文件路径"
+          />
+        )}
+        {resource.type !== 'file' && (
+          <TextareaAutosize
+            value={editData.content}
+            onChange={(e) => setEditData({ ...editData, content: e.target.value })}
+            className="w-full px-2 py-1 text-xs bg-main-view-fg/5 border border-main-view-fg/10 rounded resize-none focus:outline-none focus:ring-1 focus:ring-main-view-fg/20"
+            placeholder="资源内容"
+            minRows={2}
+            maxRows={5}
+          />
+        )}
+        <div className="flex justify-end gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onCancel}
+            className="h-6 text-xs"
+          >
+            取消
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => onSave(editData)}
+            className="h-6 text-xs"
+          >
+            <IconCheck className="w-3 h-3 mr-1" />
+            保存
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-center gap-2 p-2 bg-main-view-fg/[0.02] hover:bg-main-view-fg/5 rounded-md transition-colors">
       <div className="text-main-view-fg/60">{getResourceIcon()}</div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-main-view-fg truncate">{resource.name}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-main-view-fg truncate">{resource.name}</p>
+          <Badge
+            variant={resource.scope === 'global' ? 'default' : 'secondary'}
+            className="text-[10px] px-1 h-4"
+          >
+            {resource.scope === 'global' ? '全局' : '对话'}
+          </Badge>
+        </div>
         {resource.path && (
           <p className="text-xs text-main-view-fg/50 truncate">{resource.path}</p>
         )}
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-6 w-6"
-        onClick={onPin}
-      >
-        {isPinned ? (
-          <IconPinFilled className="w-3 h-3" />
-        ) : (
-          <IconPin className="w-3 h-3" />
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          onClick={onPin}
+        >
+          {isPinned ? (
+            <IconPinFilled className="w-3 h-3" />
+          ) : (
+            <IconPin className="w-3 h-3" />
+          )}
+        </Button>
+        {resource.editable !== false && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={onEdit}
+          >
+            <IconEdit className="w-3 h-3" />
+          </Button>
         )}
-      </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          onClick={onDelete}
+        >
+          <IconTrash className="w-3 h-3" />
+        </Button>
+      </div>
     </div>
   )
 }

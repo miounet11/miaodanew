@@ -208,7 +208,7 @@ const LeftPanel = () => {
           // Visibility controls
           open
             ? 'opacity-100 visibility-visible'
-            : 'w-0 absolute -top-100 -left-100 visibility-hidden'
+            : 'w-0 absolute -top-100 -left-100 visibility-hidden pointer-events-none'
         )}
       >
         {/* macOS 窗口控制按钮占位 */}
@@ -514,10 +514,10 @@ const LeftPanel = () => {
                 data-test-id={`menu-${menu.title}`}
                 className={cn(
                   'flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-left-panel-fg/5 transition-all',
-                  'text-left-panel-fg/60 hover:text-left-panel-fg/80',
+                  'text-black hover:text-left-panel-fg',
                   currentPath.includes(route.settings.index) && menu.route.includes(route.settings.index)
-                    ? 'bg-left-panel-fg/5 text-left-panel-fg/80'
-                    : '[&.active]:bg-left-panel-fg/5 [&.active]:text-left-panel-fg/80'
+                    ? 'bg-left-panel-fg/5 text-left-panel-fg'
+                    : '[&.active]:bg-left-panel-fg/5 [&.active]:text-left-panel-fg'
                 )}
               >
                 <menu.icon size={16} className="shrink-0" />
