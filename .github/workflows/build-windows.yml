@@ -45,6 +45,11 @@ jobs:
           corepack enable
           corepack prepare yarn@stable --activate
 
+      # 2.6 安装 jq（用于处理 JSON）
+      - name: Install jq
+        run: |
+          choco install jq -y
+
       # 3. 设置 Rust
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -83,11 +88,13 @@ jobs:
         run: |
           VERSION=${{ steps.get_version.outputs.VERSION }}
           
-          # 更新 package.json
-          npm version $VERSION --no-git-tag-version --prefix web-app
+          # 使用 jq 更新 package.json（更可靠）
+          cd web-app
+          jq --arg version "$VERSION" '.version = $version' package.json > package.json.tmp && mv package.json.tmp package.json
+          cd ..
           
           # 更新 tauri.conf.json
-          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+          jq --arg version "$VERSION" '.version = $version' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
           
           # 更新 Cargo.toml
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
