@@ -18,6 +18,7 @@ type SearchParams = {
 import DropdownAssistant from '@/containers/DropdownAssistant'
 import { useEffect } from 'react'
 import { useThreads } from '@/hooks/useThreads'
+import { ContextPanel } from '@/components/ContextPanel'
 
 export const Route = createFileRoute(route.home as any)({
   component: Index,
@@ -75,6 +76,7 @@ function Index() {
           </div>
         </div>
       </div>
+      {/* 智能上下文面板 - 初始页面不显示，在对话页面显示 */}
     </div>
   )
 }

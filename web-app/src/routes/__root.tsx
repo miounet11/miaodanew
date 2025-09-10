@@ -33,6 +33,7 @@ import ErrorDialog from '@/containers/dialogs/ErrorDialog'
 import { ServiceHubProvider } from '@/providers/ServiceHubProvider'
 import { PlatformFeatures } from '@/lib/platform/const'
 import { PlatformFeature } from '@/lib/platform/types'
+import { useContextInit } from '@/hooks/useContextInit'
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -48,6 +49,9 @@ const AppLayout = () => {
     setLeftPanelSize,
   } = useLeftPanel()
   const isSmallScreen = useSmallScreen()
+  
+  // 初始化上下文系统
+  useContextInit()
 
   // Minimum width threshold for auto-close (10% of screen width)
   const MIN_PANEL_WIDTH_THRESHOLD = 14

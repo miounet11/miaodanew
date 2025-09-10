@@ -24,6 +24,7 @@ import { useTranslation } from '@/i18n/react-i18next-compat'
 import { useChat } from '@/hooks/useChat'
 import { useSmallScreen } from '@/hooks/useMediaQuery'
 import { useTools } from '@/hooks/useTools'
+import { ContextPanel } from '@/components/ContextPanel'
 
 // as route.threadsDetail
 export const Route = createFileRoute('/threads/$threadId')({
@@ -395,6 +396,11 @@ function ThreadDetail() {
           <ChatInput model={threadModel} />
         </div>
       </div>
+      {/* 智能上下文面板 */}
+      <ContextPanel 
+        threadId={threadId} 
+        messages={messages}
+      />
     </div>
   )
 }

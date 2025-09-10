@@ -40,6 +40,8 @@ import DropdownModelProvider from '@/containers/DropdownModelProvider'
 import { ModelLoader } from '@/containers/loaders/ModelLoader'
 import DropdownToolsAvailable from '@/containers/DropdownToolsAvailable'
 import { useServiceHub } from '@/hooks/useServiceHub'
+import { MentionSelector, type MentionItem } from '@/components/MentionSelector'
+import { useContextManager } from '@/lib/contextManager'
 
 type ChatInputProps = {
   className?: string
@@ -84,6 +86,15 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
   const [connectedServers, setConnectedServers] = useState<string[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
   const [hasMmproj, setHasMmproj] = useState(false)
+  
+  // @ Mention 功能状态
+  const [showMentionSelector, setShowMentionSelector] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [mentionPosition, setMentionPosition] = useState({ x: 0, y: 0 })
+  const [mentionStartIndex, setMentionStartIndex] = useState(-1)
+  const [mentionedItems, setMentionedItems] = useState<MentionItem[]>([])
+  const inputContainerRef = useRef<HTMLDivElement>(null)
+  const { addResource } = useContextManager()
 
   // Check for connected MCP servers
   useEffect(() => {
@@ -264,6 +275,72 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
     if (size < 1024) return `${size} B`
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
     return `${(size / (1024 * 1024)).toFixed(1)} MB`
+  }
+  
+  // @ Mention 处理函数
+  const handleMentionSelect = (item: MentionItem) => {
+    if (mentionStartIndex >= 0) {
+      const beforeMention = prompt.slice(0, mentionStartIndex)
+      const afterMention = prompt.slice(mentionStartIndex + mentionQuery.length + 1)
+      const mentionText = `@${item.type}:${item.name}`
+      const newPrompt = beforeMention + mentionText + ' ' + afterMention
+      setPrompt(newPrompt)
+      
+      // 添加到已引用的资源
+      setMentionedItems([...mentionedItems, item])
+      
+      // 如果是资源类型，添加到上下文管理器
+      if (item.type === 'file' || item.type === 'mcp' || item.type === 'resource') {
+        addResource({
+          type: item.type,
+          name: item.name,
+          path: item.path,
+          pinned: false,
+        })
+      }
+    }
+    
+    setShowMentionSelector(false)
+    setMentionQuery('')
+    setMentionStartIndex(-1)
+    
+    // 重新聚焦输入框
+    setTimeout(() => {
+      textareaRef.current?.focus()
+    }, 0)
+  }
+  
+  const detectMention = (text: string, cursorPosition: number) => {
+    // 查找光标前最近的 @ 符号
+    const beforeCursor = text.slice(0, cursorPosition)
+    const lastAtIndex = beforeCursor.lastIndexOf('@')
+    
+    if (lastAtIndex >= 0) {
+      const afterAt = beforeCursor.slice(lastAtIndex + 1)
+      
+      // 检查 @ 后面是否是有效的查询（没有空格）
+      if (!afterAt.includes(' ') && !afterAt.includes('\n')) {
+        // 获取 @ 符号在文本框中的位置
+        if (textareaRef.current) {
+          const rect = textareaRef.current.getBoundingClientRect()
+          // 简单估算光标位置（这里可以根据需要改进）
+          setMentionPosition({
+            x: rect.left + 20,
+            y: rect.top + 30,
+          })
+        }
+        
+        setMentionQuery(afterAt)
+        setMentionStartIndex(lastAtIndex)
+        setShowMentionSelector(true)
+        return true
+      }
+    }
+    
+    setShowMentionSelector(false)
+    setMentionQuery('')
+    setMentionStartIndex(-1)
+    return false
   }
 
   const getFileTypeFromExtension = (fileName: string): string => {
@@ -605,7 +682,7 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={inputContainerRef}>
       <div className="relative">
         <div
           className={cn(
@@ -695,6 +772,10 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
                 // Count the number of newlines to estimate rows
                 const newRows = (e.target.value.match(/\n/g) || []).length + 1
                 setRows(Math.min(newRows, maxRows))
+                
+                // 检测 @ 提及
+                const cursorPosition = e.target.selectionStart || 0
+                detectMention(e.target.value, cursorPosition)
               }}
               onKeyDown={(e) => {
                 // e.keyCode 229 is for IME input with Safari
@@ -940,6 +1021,20 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
           </div>
         </div>
       )}
+      
+      {/* @ Mention 选择器 */}
+      <MentionSelector
+        isOpen={showMentionSelector}
+        query={mentionQuery}
+        position={mentionPosition}
+        onSelect={handleMentionSelect}
+        onClose={() => {
+          setShowMentionSelector(false)
+          setMentionQuery('')
+          setMentionStartIndex(-1)
+        }}
+        containerRef={inputContainerRef}
+      />
     </div>
   )
 }
