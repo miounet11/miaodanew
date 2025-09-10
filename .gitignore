@@ -17,8 +17,8 @@ test_results.html
 # docs
 docs/yarn.lock
 src-tauri/resources/lib
-src-tauri/icons
-!src-tauri/icons/icon.png
+# Icon files are needed for build
+# src-tauri/icons
 src-tauri/gen/apple
 src-tauri/resources/bin
 
