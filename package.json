@@ -68,6 +68,8 @@
   "packageManager": "yarn@4.5.3",
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.12",
-    "download-cli": "^1.1.1"
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "download-cli": "^1.1.1",
+    "react-syntax-highlighter": "^15.6.6"
   }
 }

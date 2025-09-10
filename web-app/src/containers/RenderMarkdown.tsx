@@ -14,6 +14,12 @@ import 'katex/dist/katex.min.css'
 import { IconCopy, IconCopyCheck } from '@tabler/icons-react'
 import rehypeRaw from 'rehype-raw'
 import { useTranslation } from '@/i18n/react-i18next-compat'
+import { analyzeHtmlContent, generateArtifactId } from '@/lib/htmlDetector'
+import { analyzeDocumentContent } from '@/lib/documentDetector'
+import HtmlArtifact from '@/components/HtmlArtifact'
+import HtmlArtifactPanel from '@/components/HtmlArtifactPanel'
+import { DocumentArtifact } from '@/components/DocumentArtifact'
+import { DocumentViewerPanel } from '@/components/DocumentViewerPanel'
 
 interface MarkdownProps {
   content: string
@@ -39,6 +45,21 @@ function RenderMarkdownComponent({
   const [copiedId, setCopiedId] = useState<string | null>(null)
   // Map to store unique IDs for code blocks based on content and position
   const codeBlockIds = useRef(new Map<string, string>())
+  
+  // State for HTML artifact viewer
+  const [activeArtifact, setActiveArtifact] = useState<{
+    id: string
+    title: string
+    content: string
+  } | null>(null)
+  
+  // State for document viewer
+  const [activeDocument, setActiveDocument] = useState<{
+    content: string
+    documentType: string
+    language: string
+    title?: string
+  } | null>(null)
 
   // Clear ID map when content changes
   useEffect(() => {
@@ -72,6 +93,58 @@ function RenderMarkdownComponent({
         if (!codeId) {
           codeId = `code-${codeBlockIds.current.size}`
           codeBlockIds.current.set(contentKey, codeId)
+        }
+
+        // Check for document artifacts (not for user messages)
+        if (!isUser && language) {
+          // Special handling for HTML
+          if (language === 'html') {
+            const htmlAnalysis = analyzeHtmlContent(code)
+            
+            // If it's a complete HTML document, render as artifact
+            if (htmlAnalysis.isComplete) {
+              const artifactId = generateArtifactId()
+              return (
+                <HtmlArtifact
+                  id={artifactId}
+                  title={htmlAnalysis.title}
+                  description={htmlAnalysis.description}
+                  htmlContent={code}
+                  onExpand={(id, content) => {
+                    setActiveArtifact({
+                      id,
+                      title: htmlAnalysis.title,
+                      content
+                    })
+                  }}
+                />
+              )
+            }
+          } else {
+            // Check for other document types
+            const docAnalysis = analyzeDocumentContent(code, language)
+            
+            // If it's a complete document, render as artifact
+            if (docAnalysis.isComplete) {
+              return (
+                <DocumentArtifact
+                  content={code}
+                  documentType={docAnalysis.documentType}
+                  language={docAnalysis.language}
+                  title={docAnalysis.title}
+                  lineCount={docAnalysis.lineCount}
+                  onView={() => {
+                    setActiveDocument({
+                      content: code,
+                      documentType: docAnalysis.documentType,
+                      language: docAnalysis.language,
+                      title: docAnalysis.title
+                    })
+                  }}
+                />
+              )
+            }
+          }
         }
 
         return !isInline && !isUser ? (
@@ -156,7 +229,7 @@ function RenderMarkdownComponent({
         )
       },
     }),
-    [codeBlockStyle, showLineNumbers, copiedId]
+    [codeBlockStyle, showLineNumbers, copiedId, isUser]
   )
 
   // Memoize the remarkPlugins to prevent unnecessary re-renders
@@ -181,21 +254,44 @@ function RenderMarkdownComponent({
 
   // Render the markdown content
   return (
-    <div
-      className={cn(
-        'markdown break-words select-text',
-        isUser && 'is-user',
-        className
-      )}
-    >
-      <ReactMarkdown
-        remarkPlugins={remarkPlugins}
-        rehypePlugins={rehypePlugins}
-        components={mergedComponents}
+    <>
+      <div
+        className={cn(
+          'markdown break-words select-text',
+          isUser && 'is-user',
+          className
+        )}
       >
-        {content}
-      </ReactMarkdown>
-    </div>
+        <ReactMarkdown
+          remarkPlugins={remarkPlugins}
+          rehypePlugins={rehypePlugins}
+          components={mergedComponents}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+      
+      {/* HTML Artifact Panel - 侧边面板 */}
+      <HtmlArtifactPanel
+        isOpen={!!activeArtifact}
+        onClose={() => setActiveArtifact(null)}
+        title={activeArtifact?.title || ''}
+        htmlContent={activeArtifact?.content || ''}
+        position="right"
+      />
+      
+      {/* Document Viewer Panel - 通用文档查看器 */}
+      {activeDocument && (
+        <DocumentViewerPanel
+          isOpen={!!activeDocument}
+          onClose={() => setActiveDocument(null)}
+          content={activeDocument.content}
+          documentType={activeDocument.documentType as any}
+          language={activeDocument.language}
+          title={activeDocument.title}
+        />
+      )}
+    </>
   )
 }
 
