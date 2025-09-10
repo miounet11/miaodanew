@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>喵岛 (Miaoda) - 独立AI平台 | 本地部署，多模型支持</title>
+    <meta name="description" content="喵岛是一款强大的独立AI应用，支持本地模型部署，保护您的隐私安全。跨平台运行，插件扩展，打造个性化AI体验。">
+    <meta name="keywords" content="AI, 本地部署, 隐私保护, 跨平台, 插件扩展, 喵岛, Miaoda">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://miaoda.xin/">
+    <meta property="og:title" content="喵岛 (Miaoda) - 独立AI平台">
+    <meta property="og:description" content="保护隐私的本地AI应用，支持多种模型，跨平台运行">
+    <meta property="og:image" content="https://miaoda.xin/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://miaoda.xin/">
+    <meta property="twitter:title" content="喵岛 (Miaoda) - 独立AI平台">
+    <meta property="twitter:description" content="保护隐私的本地AI应用，支持多种模型，跨平台运行">
+    <meta property="twitter:image" content="https://miaoda.xin/og-image.jpg">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-color: #06b6d4;
+            --background-color: #ffffff;
+            --surface-color: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #0f172a;
+            --surface-color: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --border-color: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--background-color);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] .navbar {
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .navbar.scrolled {
+            box-shadow: var(--shadow-md);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            transition: background-color 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--surface-color);
+        }
+
+        .download-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 120px 0 80px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="1000" height="1000" fill="url(%23grain)"/></svg>');
+            opacity: 0.1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: var(--background-color);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Download Section */
+        .download {
+            padding: 80px 0;
+            background: var(--surface-color);
+        }
+
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .platform-card {
+            background: var(--background-color);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .platform-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .platform-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .platform-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .platform-meta {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .platform-download {
+            margin-top: 1rem;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 40px 0;
+            background: var(--text-primary);
+            color: white;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            color: white;
+            margin-bottom: 1rem;
+            font-size: 1.125rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero-cta {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .hero-stats {
+                gap: 1rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .download-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .animate-delay-1 {
+            animation-delay: 0.1s;
+        }
+
+        .animate-delay-2 {
+            animation-delay: 0.2s;
+        }
+
+        .animate-delay-3 {
+            animation-delay: 0.3s;
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="nav-container">
+                <a href="#" class="logo">
+                    <span>🐱</span>
+                    喵岛
+                </a>
+
+                <ul class="nav-links">
+                    <li><a href="#features">功能特性</a></li>
+                    <li><a href="#download">下载</a></li>
+                    <li><a href="#docs">文档</a></li>
+                    <li><a href="#community">社区</a></li>
+                </ul>
+
+                <div class="nav-actions">
+                    <button class="theme-toggle" id="themeToggle" aria-label="切换主题">
+                        🌙
+                    </button>
+                    <button class="download-btn" onclick="scrollToDownload()">
+                        下载应用
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content animate-fade-in-up">
+                <h1 class="hero-title">
+                    保护隐私的<br>
+                    <span style="color: #fbbf24;">独立AI平台</span>
+                </h1>
+                <p class="hero-subtitle">
+                    本地部署AI模型，数据永不离开您的设备。支持多种主流模型，插件扩展，打造个性化AI体验。
+                </p>
+
+                <div class="hero-cta">
+                    <button class="download-btn" style="font-size: 1.125rem; padding: 0.75rem 1.5rem;" onclick="scrollToDownload()">
+                        🚀 立即下载
+                    </button>
+                    <button class="download-btn" style="background: transparent; border: 2px solid white; color: white;" onclick="scrollToFeatures()">
+                        了解更多
+                    </button>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">10K+</span>
+                        <span class="stat-label">活跃用户</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">50+</span>
+                        <span class="stat-label">支持模型</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">100+</span>
+                        <span class="stat-label">插件扩展</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-title animate-fade-in-up">核心特性</div>
+            <p class="section-subtitle animate-fade-in-up animate-delay-1">
+                打造功能强大、易于使用的AI平台
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-card animate-fade-in-up animate-delay-1">
+                    <div class="feature-icon">🧠</div>
+                    <h3 class="feature-title">AI模型支持</h3>
+                    <p class="feature-description">
+                        支持Llama、GPT、Claude等多种主流AI模型。本地部署确保数据安全和隐私保护。
+                    </p>
+                </div>
+
+                <div class="feature-card animate-fade-in-up animate-delay-2">
+                    <div class="feature-icon">🔒</div>
+                    <h3 class="feature-title">隐私优先</h3>
+                    <p class="feature-description">
+                        所有对话和数据存储在本地，不会上传到云端。完全控制您的数据和隐私。
+                    </p>
+                </div>
+
+                <div class="feature-card animate-fade-in-up animate-delay-3">
+                    <div class="feature-icon">🔧</div>
+                    <h3 class="feature-title">插件扩展</h3>
+                    <p class="feature-description">
+                        丰富的插件生态系统，支持自定义功能扩展。开发者友好，易于定制。
+                    </p>
+                </div>
+
+                <div class="feature-card animate-fade-in-up animate-delay-1">
+                    <div class="feature-icon">🌐</div>
+                    <h3 class="feature-title">跨平台支持</h3>
+                    <p class="feature-description">
+                        一套代码，多平台运行。支持桌面应用、Web应用和浏览器扩展。
+                    </p>
+                </div>
+
+                <div class="feature-card animate-fade-in-up animate-delay-2">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">高性能优化</h3>
+                    <p class="feature-description">
+                        优化的算法和缓存机制，提供流畅的AI对话体验。支持GPU加速。
+                    </p>
+                </div>
+
+                <div class="feature-card animate-fade-in-up animate-delay-3">
+                    <div class="feature-icon">🎨</div>
+                    <h3 class="feature-title">个性化体验</h3>
+                    <p class="feature-description">
+                        自定义主题、界面布局和快捷键。支持多语言，适配不同用户习惯。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section class="download" id="download">
+        <div class="container">
+            <div class="section-title animate-fade-in-up">下载应用</div>
+            <p class="section-subtitle animate-fade-in-up animate-delay-1">
+                选择适合您的平台开始使用
+            </p>
+
+            <div class="download-grid">
+                <div class="platform-card animate-fade-in-up animate-delay-1">
+                    <div class="platform-icon">🍎</div>
+                    <h3 class="platform-name">macOS</h3>
+                    <div class="platform-meta">
+                        支持 Intel 和 Apple Silicon<br>
+                        大小: ~150MB
+                    </div>
+                    <button class="download-btn platform-download">
+                        下载 macOS 版
+                    </button>
+                </div>
+
+                <div class="platform-card animate-fade-in-up animate-delay-2">
+                    <div class="platform-icon">🪟</div>
+                    <h3 class="platform-name">Windows</h3>
+                    <div class="platform-meta">
+                        支持 x64 和 ARM64<br>
+                        大小: ~180MB
+                    </div>
+                    <button class="download-btn platform-download">
+                        下载 Windows 版
+                    </button>
+                </div>
+
+                <div class="platform-card animate-fade-in-up animate-delay-3">
+                    <div class="platform-icon">🐧</div>
+                    <h3 class="platform-name">Linux</h3>
+                    <div class="platform-meta">
+                        AppImage, deb, rpm<br>
+                        大小: ~160MB
+                    </div>
+                    <button class="download-btn platform-download">
+                        下载 Linux 版
+                    </button>
+                </div>
+
+                <div class="platform-card animate-fade-in-up animate-delay-1">
+                    <div class="platform-icon">🌐</div>
+                    <h3 class="platform-name">Web 版本</h3>
+                    <div class="platform-meta">
+                        浏览器在线使用<br>
+                        无需下载
+                    </div>
+                    <button class="download-btn platform-download" style="background: var(--secondary-color);">
+                        在线使用
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>产品</h3>
+                    <ul>
+                        <li><a href="#features">功能特性</a></li>
+                        <li><a href="#download">下载</a></li>
+                        <li><a href="#docs">使用文档</a></li>
+                        <li><a href="#pricing">价格</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>开发者</h3>
+                    <ul>
+                        <li><a href="#api">API 文档</a></li>
+                        <li><a href="#plugins">插件开发</a></li>
+                        <li><a href="#github">GitHub</a></li>
+                        <li><a href="#contribute">贡献指南</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>社区</h3>
+                    <ul>
+                        <li><a href="#discord">Discord</a></li>
+                        <li><a href="#forum">论坛</a></li>
+                        <li><a href="#blog">博客</a></li>
+                        <li><a href="#support">技术支持</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>公司</h3>
+                    <ul>
+                        <li><a href="#about">关于我们</a></li>
+                        <li><a href="#contact">联系方式</a></li>
+                        <li><a href="#careers">加入我们</a></li>
+                        <li><a href="#privacy">隐私政策</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 喵岛 (Miaoda). All rights reserved.</p>
+                <p>邮箱: service@miaoda.xin | GitHub: <a href="https://github.com/miounet11/miaodanew" style="color: rgba(255, 255, 255, 0.8);">miounet11/miaodanew</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle')
+        const html = document.documentElement
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light'
+        html.setAttribute('data-theme', savedTheme)
+        updateThemeIcon(savedTheme)
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme')
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light'
+
+            html.setAttribute('data-theme', newTheme)
+            localStorage.setItem('theme', newTheme)
+            updateThemeIcon(newTheme)
+        })
+
+        function updateThemeIcon(theme) {
+            themeToggle.textContent = theme === 'light' ? '🌙' : '☀️'
+        }
+
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar')
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 100) {
+                navbar.classList.add('scrolled')
+            } else {
+                navbar.classList.remove('scrolled')
+            }
+        })
+
+        // Smooth scrolling
+        function scrollToDownload() {
+            document.getElementById('download').scrollIntoView({
+                behavior: 'smooth'
+            })
+        }
+
+        function scrollToFeatures() {
+            document.getElementById('features').scrollIntoView({
+                behavior: 'smooth'
+            })
+        }
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-fade-in-up')
+                }
+            })
+        }, observerOptions)
+
+        // Observe all feature cards and other elements
+        document.querySelectorAll('.feature-card, .platform-card').forEach(card => {
+            observer.observe(card)
+        })
+
+        // Analytics (placeholder)
+        console.log('喵岛官网已加载 - 版本: 1.0.0')
+    </script>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "喵岛",
+        "description": "一款保护隐私的独立AI平台，支持本地模型部署和跨平台运行",
+        "url": "https://miaoda.xin",
+        "applicationCategory": "AI工具",
+        "operatingSystem": "Windows, macOS, Linux",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "CNY"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "喵岛团队"
+        }
+    }
+    </script>
+</body>
+</html>
