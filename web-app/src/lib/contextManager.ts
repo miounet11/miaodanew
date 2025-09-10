@@ -84,6 +84,7 @@ export interface ContextActions {
   generateSummary: (threadId: string, messages: any[]) => Promise<ContextSummary>
   updateSummary: (id: string, content: string) => void
   getSummary: (threadId: string) => ContextSummary | undefined
+  getSummaryForContext: (threadId: string, maxTokens?: number) => string | null
   
   // 规则操作
   addRule: (rule: Omit<Rule, 'id' | 'createdAt' | 'updatedAt'>) => void
@@ -134,14 +135,14 @@ export const useContextManager = create<ContextState & ContextActions>()(
       
       // 上下文总结操作
       generateSummary: async (threadId, messages) => {
-        // 导入总结生成器
-        const { generateLocalSummary } = await import('./contextSummarizer')
+        // 导入总结生成器和获取服务
+        const { generateAISummary, generateLocalSummary } = await import('./contextSummarizer')
         
         // 先创建占位符
         const placeholderSummary: ContextSummary = {
           id: `summary-${Date.now()}`,
           threadId,
-          content: '正在生成对话总结...',
+          content: '正在使用 AI 生成对话总结...',
           keyPoints: [],
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -157,27 +158,90 @@ export const useContextManager = create<ContextState & ContextActions>()(
           }
         })
         
-        // 生成实际总结（这里使用本地生成，可以后续集成 AI 服务）
-        const result = generateLocalSummary(messages)
-        
-        // 更新总结内容
-        const summary: ContextSummary = {
-          ...placeholderSummary,
-          content: result.summary,
-          keyPoints: result.keyPoints,
-          updatedAt: new Date(),
-        }
-        
-        set((state) => {
-          const newSummaries = new Map(state.summaries)
-          newSummaries.set(threadId, summary)
-          return { 
-            summaries: newSummaries,
-            currentSummary: summary
+        try {
+          // 尝试使用 grok-3 模型生成总结
+          const { getServiceHub } = await import('@/hooks/useServiceHub')
+          const { streamCompletion } = await import('./completion')
+          
+          // 配置 grok-3 模型参数
+          const modelService = {
+            complete: async (params: any) => {
+              const provider = {
+                provider: 'miaoda',
+                base_url: 'https://grok.x.ai/v1',
+                api_key: '', // 免费服务不需要 API key
+              }
+              
+              const model = {
+                model: 'grok-3',
+                name: 'Grok 3',
+                provider: 'miaoda',
+              }
+              
+              let responseContent = ''
+              
+              // 使用流式 API 获取响应
+              for await (const chunk of streamCompletion({
+                provider,
+                model,
+                messages: params.messages,
+                temperature: params.temperature || 0.3,
+                max_tokens: params.max_tokens || 500,
+              })) {
+                if (chunk.choices[0]?.delta?.content) {
+                  responseContent += chunk.choices[0].delta.content
+                }
+              }
+              
+              return { content: responseContent }
+            }
           }
-        })
-        
-        return summary
+          
+          // 使用 AI 生成总结
+          const result = await generateAISummary(messages, modelService, 'zh')
+          
+          // 更新总结内容
+          const summary: ContextSummary = {
+            ...placeholderSummary,
+            content: result.summary,
+            keyPoints: result.keyPoints,
+            updatedAt: new Date(),
+          }
+          
+          set((state) => {
+            const newSummaries = new Map(state.summaries)
+            newSummaries.set(threadId, summary)
+            return { 
+              summaries: newSummaries,
+              currentSummary: summary
+            }
+          })
+          
+          return summary
+        } catch (error) {
+          console.error('AI summary generation failed, falling back to local:', error)
+          
+          // 如果 AI 生成失败，降级到本地生成
+          const result = generateLocalSummary(messages)
+          
+          const summary: ContextSummary = {
+            ...placeholderSummary,
+            content: result.summary,
+            keyPoints: result.keyPoints,
+            updatedAt: new Date(),
+          }
+          
+          set((state) => {
+            const newSummaries = new Map(state.summaries)
+            newSummaries.set(threadId, summary)
+            return { 
+              summaries: newSummaries,
+              currentSummary: summary
+            }
+          })
+          
+          return summary
+        }
       },
       
       updateSummary: (id, content) => {
@@ -195,6 +259,45 @@ export const useContextManager = create<ContextState & ContextActions>()(
       
       getSummary: (threadId) => {
         return get().summaries.get(threadId)
+      },
+      
+      // 获取总结用于发送上下文（带 token 限制）
+      getSummaryForContext: (threadId, maxTokens = 1000) => {
+        const summary = get().summaries.get(threadId)
+        if (!summary || !summary.content) return null
+        
+        // 简单的 token 估算：平均每个字符约 0.5 tokens（中文约 2 tokens/字）
+        // 对于混合内容，我们使用保守估计
+        const estimateTokens = (text: string) => {
+          const chineseChars = text.match(/[\u4e00-\u9fa5]/g)?.length || 0
+          const otherChars = text.length - chineseChars
+          return Math.ceil(chineseChars * 2 + otherChars * 0.5)
+        }
+        
+        let content = summary.content
+        let tokens = estimateTokens(content)
+        
+        // 如果超过限制，截断内容
+        if (tokens > maxTokens) {
+          // 按比例截断
+          const ratio = maxTokens / tokens
+          const targetLength = Math.floor(content.length * ratio * 0.9) // 留 10% 余量
+          content = content.slice(0, targetLength)
+          
+          // 确保不在句子中间截断
+          const lastPeriod = content.lastIndexOf('。')
+          const lastNewline = content.lastIndexOf('\n')
+          const cutPoint = Math.max(lastPeriod, lastNewline)
+          
+          if (cutPoint > targetLength * 0.8) {
+            content = content.slice(0, cutPoint + 1)
+          }
+          
+          content += '...[内容已截断]'
+        }
+        
+        // 添加上下文说明
+        return `【对话总结】\n${content}\n【总结结束】`
       },
       
       // 规则操作

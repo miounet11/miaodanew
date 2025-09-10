@@ -1,0 +1,29 @@
+# 用于构建 Windows 版本的 Docker 镜像
+FROM rust:1.77-bullseye
+
+# 安装 Node.js 和 Yarn
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g yarn
+
+# 安装 Windows 交叉编译工具
+RUN apt-get update && apt-get install -y \
+    gcc-mingw-w64-x86-64 \
+    g++-mingw-w64-x86-64 \
+    nsis \
+    zip
+
+# 添加 Windows 编译目标
+RUN rustup target add x86_64-pc-windows-gnu
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制项目文件
+COPY . .
+
+# 安装依赖
+RUN yarn install
+
+# 构建 Windows 版本
+CMD ["yarn", "tauri", "build", "--target", "x86_64-pc-windows-gnu"]

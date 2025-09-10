@@ -18,7 +18,6 @@ type SearchParams = {
 import DropdownAssistant from '@/containers/DropdownAssistant'
 import { useEffect } from 'react'
 import { useThreads } from '@/hooks/useThreads'
-import { ContextPanel } from '@/components/ContextPanel'
 
 export const Route = createFileRoute(route.home as any)({
   component: Index,

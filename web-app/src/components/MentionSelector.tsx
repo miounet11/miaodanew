@@ -9,6 +9,8 @@ import {
   IconHistory,
   IconSettings,
   IconSearch,
+  IconServer,
+  IconTool,
 } from '@tabler/icons-react'
 // import { ScrollArea } from '@/components/ui/scroll-area' // 使用原生滚动
 import { Badge } from '@/components/ui/badge'
@@ -17,11 +19,12 @@ import { useServiceHub } from '@/hooks/useServiceHub'
 
 export interface MentionItem {
   id: string
-  type: 'file' | 'rule' | 'knowledge' | 'context' | 'mcp' | 'resource'
+  type: 'file' | 'rule' | 'knowledge' | 'context' | 'mcp' | 'mcp-tool' | 'resource'
   name: string
   description?: string
   path?: string
   server?: string
+  toolName?: string
   metadata?: any
 }
 
@@ -46,8 +49,8 @@ export function MentionSelector({
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [loading, setLoading] = useState(false)
   const selectorRef = useRef<HTMLDivElement>(null)
+  const { rules, knowledge, resources } = useContextManager()
   const serviceHub = useServiceHub()
-  const { rules, knowledge, resources, searchKnowledge } = useContextManager()
 
   // 获取所有可提及的项目
   const fetchMentionItems = useCallback(async () => {
@@ -88,19 +91,37 @@ export function MentionSelector({
         })
       })
       
-      // 4. 获取 MCP 资源（如果有）
+      // 4. 获取 MCP 工具和服务器
       try {
-        // TODO: 实现 MCP 资源获取
-        // const mcpResources = await serviceHub.mcp().getResources()
-        // mcpResources.forEach(resource => {
-        //   allItems.push({
-        //     id: resource.id,
-        //     type: 'mcp',
-        //     name: resource.name,
-        //     description: resource.description,
-        //     server: resource.server,
-        //   })
-        // })
+        // 获取 MCP 工具
+        const mcpTools = await serviceHub.mcp().getTools()
+        if (mcpTools && mcpTools.length > 0) {
+          mcpTools.forEach(tool => {
+            allItems.push({
+              id: `mcp-tool-${tool.name}`,
+              type: 'mcp-tool',
+              name: tool.displayName || tool.name,
+              description: tool.description,
+              server: tool.serverName,
+              toolName: tool.name,
+              metadata: tool,
+            })
+          })
+        }
+        
+        // 获取已连接的 MCP 服务器
+        const connectedServers = await serviceHub.mcp().getConnectedServers()
+        if (connectedServers && connectedServers.length > 0) {
+          connectedServers.forEach(server => {
+            allItems.push({
+              id: `mcp-server-${server}`,
+              type: 'mcp',
+              name: server,
+              description: 'MCP 服务器',
+              server: server,
+            })
+          })
+        }
       } catch (error) {
         console.error('Failed to fetch MCP resources:', error)
       }
@@ -126,7 +147,7 @@ export function MentionSelector({
     } finally {
       setLoading(false)
     }
-  }, [query, rules, knowledge, resources])
+  }, [query, rules, knowledge, resources, serviceHub])
 
   // 当打开或查询变化时，获取项目
   useEffect(() => {
@@ -203,7 +224,9 @@ export function MentionSelector({
       case 'context':
         return <IconHistory className="w-4 h-4" />
       case 'mcp':
-        return <IconDatabase className="w-4 h-4" />
+        return <IconServer className="w-4 h-4" />
+      case 'mcp-tool':
+        return <IconTool className="w-4 h-4" />
       case 'resource':
         return <IconFile className="w-4 h-4" />
       default:
@@ -222,7 +245,9 @@ export function MentionSelector({
       case 'context':
         return '上下文'
       case 'mcp':
-        return 'MCP'
+        return 'MCP 服务器'
+      case 'mcp-tool':
+        return 'MCP 工具'
       case 'resource':
         return '资源'
       default:

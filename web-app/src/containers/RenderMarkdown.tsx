@@ -14,7 +14,7 @@ import 'katex/dist/katex.min.css'
 import { IconCopy, IconCopyCheck } from '@tabler/icons-react'
 import rehypeRaw from 'rehype-raw'
 import { useTranslation } from '@/i18n/react-i18next-compat'
-import { analyzeHtmlContent, generateArtifactId } from '@/lib/htmlDetector'
+import { analyzeHtmlContent } from '@/lib/htmlDetector'
 import { analyzeDocumentContent } from '@/lib/documentDetector'
 import HtmlArtifact from '@/components/HtmlArtifact'
 import HtmlArtifactPanel from '@/components/HtmlArtifactPanel'
@@ -103,18 +103,18 @@ function RenderMarkdownComponent({
             
             // If it's a complete HTML document, render as artifact
             if (htmlAnalysis.isComplete) {
-              const artifactId = generateArtifactId()
+              // Use stable ID based on content hash
+              const artifactId = `html-${codeId}`
               return (
                 <HtmlArtifact
-                  id={artifactId}
-                  title={htmlAnalysis.title}
-                  description={htmlAnalysis.description}
-                  htmlContent={code}
-                  onExpand={(id, content) => {
+                  content={code}
+                  analysis={htmlAnalysis}
+                  compact={true}
+                  onExpand={() => {
                     setActiveArtifact({
-                      id,
+                      id: artifactId,
                       title: htmlAnalysis.title,
-                      content
+                      content: code
                     })
                   }}
                 />

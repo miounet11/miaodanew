@@ -30,7 +30,7 @@ export const predefinedProviders = [
     api_key: 'sk-44mAODPoO9EzCVC3Qp8PVpImElGDEByuDGNQjsFJHGRbhPdp',
     base_url: 'https://ttkk.inping.com/v1',
     explore_models_url: 'https://www.miaoda.xin',
-    provider: 'openai-compatible',
+    provider: 'miaoda',
     settings: [
       {
         key: 'api-key',

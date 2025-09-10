@@ -42,6 +42,17 @@ import DropdownToolsAvailable from '@/containers/DropdownToolsAvailable'
 import { useServiceHub } from '@/hooks/useServiceHub'
 import { MentionSelector, type MentionItem } from '@/components/MentionSelector'
 import { useContextManager } from '@/lib/contextManager'
+import { 
+  CollapsedContent, 
+  createCollapsedContentItem, 
+  detectFileType,
+  type CollapsedContentItem 
+} from '@/components/CollapsedContent'
+import {
+  IconBrain,
+  IconChevronRight,
+} from '@tabler/icons-react'
+import { Badge } from '@/components/ui/badge'
 
 type ChatInputProps = {
   className?: string
@@ -71,9 +82,18 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
 
   const { selectedModel, selectedProvider } = useModelProvider()
   const { sendMessage } = useChat()
+  const { activeThreadId } = useThreads()
   const [message, setMessage] = useState('')
   const [dropdownToolsAvailable, setDropdownToolsAvailable] = useState(false)
   const [tooltipToolsAvailable, setTooltipToolsAvailable] = useState(false)
+  
+  // 智能上下文管理
+  const { 
+    togglePanel, 
+    isPanelOpen,
+    getActiveRules,
+    resources 
+  } = useContextManager()
   const [uploadedFiles, setUploadedFiles] = useState<
     Array<{
       name: string
@@ -94,7 +114,11 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
   const [mentionStartIndex, setMentionStartIndex] = useState(-1)
   const [mentionedItems, setMentionedItems] = useState<MentionItem[]>([])
   const inputContainerRef = useRef<HTMLDivElement>(null)
-  const { addResource } = useContextManager()
+  const { addResource, getSummaryForContext } = useContextManager()
+  
+  // 折叠内容状态
+  const [collapsedContents, setCollapsedContents] = useState<CollapsedContentItem[]>([])
+  const pasteCounterRef = useRef(1)
 
   // Check for connected MCP servers
   useEffect(() => {
@@ -133,7 +157,7 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
           // Enable for popular AI models that support multimodal input
           else if (
             selectedProvider === 'openai' ||
-            selectedProvider === 'openai-compatible' ||
+            selectedProvider === 'miaoda' ||
             selectedProvider === 'anthropic' ||
             selectedProvider === 'gemini' ||
             selectedProvider === 'openrouter' ||
@@ -162,21 +186,65 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
   // Check if there are active MCP servers
   const hasActiveMCPServers = connectedServers.length > 0 || tools.length > 0
 
+  // 折叠内容管理函数
+  const handleRemoveCollapsedContent = (id: string) => {
+    setCollapsedContents(prev => prev.filter(item => item.id !== id))
+  }
+  
+  const handleToggleCollapsedContent = (id: string) => {
+    setCollapsedContents(prev => prev.map(item => 
+      item.id === id ? { ...item, collapsed: !item.collapsed } : item
+    ))
+  }
+  
+  // 获取完整的消息内容，展开所有折叠项
+  const getFullMessageContent = (prompt: string) => {
+    let fullContent = prompt
+    
+    // 替换所有折叠内容的引用为实际内容
+    collapsedContents.forEach(item => {
+      const reference = `[${item.fileName || item.title}]`
+      if (fullContent.includes(reference)) {
+        fullContent = fullContent.replace(
+          reference,
+          `\n\`\`\`${item.type === 'code' ? item.fileName?.split('.').pop() || '' : ''}\n${item.content}\n\`\`\`\n`
+        )
+      }
+    })
+    
+    return fullContent
+  }
+
   const handleSendMesage = (prompt: string) => {
     if (!selectedModel) {
       setMessage('Please select a model to start chatting.')
       return
     }
-    if (!prompt.trim() && uploadedFiles.length === 0) {
+    if (!prompt.trim() && uploadedFiles.length === 0 && collapsedContents.length === 0) {
       return
     }
+    
+    // 获取展开的完整消息内容
+    let fullMessage = getFullMessageContent(prompt)
+    
+    // 获取当前线程的总结并添加到消息中（如果存在）
+    if (activeThreadId) {
+      const summaryContext = getSummaryForContext(activeThreadId, 1000)
+      if (summaryContext) {
+        // 将总结作为系统上下文添加到消息开头
+        fullMessage = `${summaryContext}\n\n${fullMessage}`
+      }
+    }
+    
     setMessage('')
     sendMessage(
-      prompt,
+      fullMessage,
       true,
       uploadedFiles.length > 0 ? uploadedFiles : undefined
     )
     setUploadedFiles([])
+    setCollapsedContents([]) // 清空折叠内容
+    pasteCounterRef.current = 1 // 重置计数器
   }
 
   useEffect(() => {
@@ -282,7 +350,20 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
     if (mentionStartIndex >= 0) {
       const beforeMention = prompt.slice(0, mentionStartIndex)
       const afterMention = prompt.slice(mentionStartIndex + mentionQuery.length + 1)
-      const mentionText = `@${item.type}:${item.name}`
+      
+      // 根据类型生成不同的提及文本
+      let mentionText = ''
+      if (item.type === 'mcp-tool') {
+        // MCP 工具使用特殊格式
+        mentionText = `@mcp:${item.server}/${item.toolName}`
+      } else if (item.type === 'mcp') {
+        // MCP 服务器
+        mentionText = `@mcp:${item.name}`
+      } else {
+        // 其他类型
+        mentionText = `@${item.type}:${item.name}`
+      }
+      
       const newPrompt = beforeMention + mentionText + ' ' + afterMention
       setPrompt(newPrompt)
       
@@ -290,11 +371,13 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
       setMentionedItems([...mentionedItems, item])
       
       // 如果是资源类型，添加到上下文管理器
-      if (item.type === 'file' || item.type === 'mcp' || item.type === 'resource') {
+      if (item.type === 'file' || item.type === 'mcp' || item.type === 'mcp-tool' || item.type === 'resource') {
         addResource({
-          type: item.type,
+          type: (item.type === 'mcp' || item.type === 'mcp-tool') ? 'mcp' : 
+                item.type === 'resource' ? 'file' : 
+                item.type as 'file' | 'mcp',
           name: item.name,
-          path: item.path,
+          path: item.path || item.server || '',
           pinned: false,
         })
       }
@@ -547,15 +630,10 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
     }
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragOver(false)
-
-    // Only allow drop if model supports mmproj
-    if (!hasMmproj) {
-      return
-    }
 
     // Check if dataTransfer exists (it might not in some Tauri scenarios)
     if (!e.dataTransfer) {
@@ -565,18 +643,96 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
 
     const files = e.dataTransfer.files
     if (files && files.length > 0) {
-      // Create a synthetic event to reuse existing file handling logic
-      const syntheticEvent = {
-        target: {
-          files: files,
-        },
-      } as React.ChangeEvent<HTMLInputElement>
-
-      handleFileChange(syntheticEvent)
+      const fileArray = Array.from(files)
+      
+      for (const file of fileArray) {
+        // 检查是否是图片
+        if (file.type.startsWith('image/') && hasMmproj) {
+          // 处理图片文件，使用现有逻辑
+          const syntheticEvent = {
+            target: {
+              files: [file],
+            },
+          } as unknown as React.ChangeEvent<HTMLInputElement>
+          handleFileChange(syntheticEvent)
+        } else {
+          // 处理文档文件
+          try {
+            const content = await file.text()
+            const fileType = detectFileType(file.name)
+            
+            // 创建折叠内容项
+            const collapsedItem = createCollapsedContentItem(
+              content,
+              fileType,
+              file.name
+            )
+            
+            setCollapsedContents(prev => [...prev, collapsedItem])
+            
+            // 在输入框中添加引用标记
+            const reference = `[${file.name}]`
+            const currentPrompt = prompt
+            const newPrompt = currentPrompt ? `${currentPrompt}\n${reference}` : reference
+            setPrompt(newPrompt)
+            
+            // 添加到资源管理器
+            addResource({
+              type: 'file',
+              name: file.name,
+              path: file.name,
+              pinned: false,
+            })
+          } catch (error) {
+            console.error('Failed to read file:', error)
+          }
+        }
+      }
     }
   }
 
   const handlePaste = async (e: React.ClipboardEvent) => {
+    // 先处理文本粘贴
+    const text = e.clipboardData?.getData('text/plain')
+    if (text) {
+      const lines = text.split('\n')
+      
+      // 如果粘贴的文本超过10行，创建折叠内容
+      if (lines.length > 10) {
+        e.preventDefault()
+        
+        const collapsedItem = createCollapsedContentItem(
+          text, 
+          'text',
+          `Pasted text #${pasteCounterRef.current}`
+        )
+        pasteCounterRef.current++
+        
+        setCollapsedContents(prev => [...prev, collapsedItem])
+        
+        // 在输入框中添加引用标记
+        const reference = `[${collapsedItem.fileName || collapsedItem.title}]`
+        const currentPrompt = prompt
+        const cursorPosition = textareaRef.current?.selectionStart || currentPrompt.length
+        const newPrompt = 
+          currentPrompt.slice(0, cursorPosition) + 
+          reference + 
+          currentPrompt.slice(cursorPosition)
+        setPrompt(newPrompt)
+        
+        // 重新聚焦并设置光标位置
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus()
+            const newPosition = cursorPosition + reference.length
+            textareaRef.current.setSelectionRange(newPosition, newPosition)
+          }
+        }, 0)
+        
+        return
+      }
+    }
+    
     // Only process images if model supports mmproj
     if (hasMmproj) {
       const clipboardItems = e.clipboardData?.items
@@ -714,6 +870,20 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
             onDragOver={hasMmproj ? handleDragOver : undefined}
             onDrop={hasMmproj ? handleDrop : undefined}
           >
+            {/* 显示折叠的内容 */}
+            {collapsedContents.length > 0 && (
+              <div className="p-2 pb-0 space-y-2">
+                {collapsedContents.map((item) => (
+                  <CollapsedContent
+                    key={item.id}
+                    item={item}
+                    onRemove={handleRemoveCollapsedContent}
+                    onToggle={handleToggleCollapsedContent}
+                  />
+                ))}
+              </div>
+            )}
+            
             {uploadedFiles.length > 0 && (
               <div className="flex gap-3 items-center p-2 pb-0 flex-wrap">
                 {uploadedFiles.map((file, index) => {
@@ -784,7 +954,7 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
                 if (
                   e.key === 'Enter' &&
                   !e.shiftKey &&
-                  prompt.trim() &&
+                  (prompt.trim() || collapsedContents.length > 0) &&
                   !isComposing
                 ) {
                   e.preventDefault()
@@ -1033,8 +1203,39 @@ const ChatInput = ({ model, className, initialMessage }: ChatInputProps) => {
           setMentionQuery('')
           setMentionStartIndex(-1)
         }}
-        containerRef={inputContainerRef}
+        containerRef={inputContainerRef as React.RefObject<HTMLElement>}
       />
+      
+      {/* 智能上下文按钮栏 - 类似 Claude.AI 设计 */}
+      {!initialMessage && (
+        <div className="flex items-center gap-2 mt-2 px-2">
+          <button
+            onClick={togglePanel}
+            className={cn(
+              'flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all',
+              'text-sm text-main-view-fg/70 hover:text-main-view-fg',
+              'border-main-view-fg/10 hover:border-main-view-fg/20',
+              'bg-main-view hover:bg-main-view-fg/5',
+              isPanelOpen && 'bg-main-view-fg/5 border-main-view-fg/20 text-main-view-fg'
+            )}
+          >
+            <IconBrain size={16} />
+            <span>智能上下文</span>
+            {(getActiveRules().length > 0 || resources.filter(r => r.pinned).length > 0) && (
+              <Badge variant="secondary" className="ml-1 px-1.5 py-0 h-5 text-xs">
+                {getActiveRules().length + resources.filter(r => r.pinned).length}
+              </Badge>
+            )}
+            <IconChevronRight 
+              size={14} 
+              className={cn(
+                'transition-transform',
+                isPanelOpen && 'rotate-180'
+              )} 
+            />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

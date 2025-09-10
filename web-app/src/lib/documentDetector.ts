@@ -277,7 +277,6 @@ const DOCUMENT_PATTERNS: Record<string, {
  * 检测文档类型
  */
 function detectDocumentType(content: string, language?: string): DocumentType {
-  const lowerContent = content.toLowerCase()
   
   // 首先检查语言提示
   if (language) {
@@ -438,7 +437,6 @@ export function analyzeDocumentContent(
     const hasDoctype = /<!DOCTYPE\s+html/i.test(trimmedContent)
     const hasHtmlTag = /<html[\s>]/i.test(trimmedContent)
     const hasBodyTag = /<body[\s>]/i.test(trimmedContent)
-    const hasHeadTag = /<head[\s>]/i.test(trimmedContent)
     
     const isComplete = hasDoctype || (hasHtmlTag && hasBodyTag) || lineCount > 20
     

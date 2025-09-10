@@ -8,6 +8,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getProviderLogo(provider: string) {
   switch (provider) {
+    case 'miaoda':
+      return '/images/model-provider/miaoda.png'
     case 'jan':
       return '/images/model-provider/jan.png'
     case 'llamacpp':
@@ -35,6 +37,8 @@ export function getProviderLogo(provider: string) {
 
 export const getProviderTitle = (provider: string) => {
   switch (provider) {
+    case 'miaoda':
+      return 'Miaoda'
     case 'jan':
       return 'Miaoda'
     case 'llamacpp':

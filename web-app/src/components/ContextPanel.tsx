@@ -11,13 +11,9 @@ import {
   IconTrash,
   IconPin,
   IconPinFilled,
-  IconChevronRight,
-  IconChevronDown,
   IconX,
   IconSettings,
   IconRefresh,
-  IconDownload,
-  IconUpload,
 } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -49,7 +45,6 @@ export function ContextPanel({ threadId, messages = [], className }: ContextPane
     generateSummary,
     updateSummary,
     toggleRule,
-    addRule,
     deleteRule,
     pinResource,
     unpinResource,
@@ -66,12 +61,12 @@ export function ContextPanel({ threadId, messages = [], className }: ContextPane
   const pinnedResources = resources.filter(r => r.pinned)
   const unpinnedResources = resources.filter(r => !r.pinned)
 
-  // 自动生成总结
-  useEffect(() => {
-    if (threadId && messages.length > 0 && !currentSummary) {
-      handleGenerateSummary()
-    }
-  }, [threadId, messages.length])
+  // 移除自动生成总结，改为用户手动触发
+  // useEffect(() => {
+  //   if (threadId && messages.length > 0 && !currentSummary) {
+  //     handleGenerateSummary()
+  //   }
+  // }, [threadId, messages.length])
 
   // 同步总结文本
   useEffect(() => {
@@ -98,14 +93,7 @@ export function ContextPanel({ threadId, messages = [], className }: ContextPane
   }
 
   if (!isPanelOpen) {
-    return (
-      <button
-        onClick={togglePanel}
-        className="fixed right-0 top-1/2 -translate-y-1/2 bg-main-view border border-main-view-fg/10 rounded-l-lg p-2 hover:bg-main-view-fg/5 transition-colors z-30"
-      >
-        <IconChevronRight className="w-4 h-4 text-main-view-fg" />
-      </button>
-    )
+    return null // 按钮已移到输入框下方
   }
 
   return (
@@ -193,59 +181,111 @@ export function ContextPanel({ threadId, messages = [], className }: ContextPane
         {/* 总结标签页 */}
         <TabsContent value="summary" className="flex-1 p-4 space-y-4">
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-2">
               <h4 className="text-sm font-medium text-main-view-fg">对话总结</h4>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => setEditingSummary(!editingSummary)}
-              >
-                <IconEdit className="w-3 h-3" />
-              </Button>
+              <div className="flex items-center gap-1">
+                {!currentSummary && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleGenerateSummary}
+                    disabled={isGenerating || !threadId || messages.length === 0}
+                    className="text-xs h-7"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <IconRefresh className="w-3 h-3 mr-1 animate-spin" />
+                        生成中...
+                      </>
+                    ) : (
+                      <>
+                        <IconBrain className="w-3 h-3 mr-1" />
+                        生成总结
+                      </>
+                    )}
+                  </Button>
+                )}
+                {currentSummary && !editingSummary && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setEditingSummary(true)}
+                  >
+                    <IconEdit className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
             </div>
             
+            {/* 总结内容区域 */}
             {editingSummary ? (
               <div className="space-y-2">
                 <TextareaAutosize
                   value={summaryText}
                   onChange={(e) => setSummaryText(e.target.value)}
-                  className="w-full p-2 text-sm bg-main-view-fg/5 border border-main-view-fg/10 rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-main-view-fg/20"
-                  minRows={3}
-                  maxRows={10}
-                  placeholder="输入对话总结..."
+                  className="w-full p-3 text-sm bg-main-view-fg/5 border border-main-view-fg/10 rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-main-view-fg/20"
+                  minRows={5}
+                  maxRows={15}
+                  placeholder="在此输入或编辑对话总结..."
+                  autoFocus
                 />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleSaveSummary}
-                    className="text-xs"
-                  >
-                    保存
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setEditingSummary(false)
-                      setSummaryText(currentSummary?.content || '')
-                    }}
-                    className="text-xs"
-                  >
-                    取消
-                  </Button>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-main-view-fg/50">
+                    总结将作为上下文发送（限制约1000 tokens）
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveSummary}
+                      className="text-xs h-7"
+                    >
+                      保存
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditingSummary(false)
+                        setSummaryText(currentSummary?.content || '')
+                      }}
+                      className="text-xs h-7"
+                    >
+                      取消
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : currentSummary ? (
+              <div className="space-y-2">
+                <div className="p-3 bg-main-view-fg/5 rounded-lg cursor-pointer hover:bg-main-view-fg/[0.07] transition-colors"
+                     onClick={() => setEditingSummary(true)}>
+                  <p className="text-sm text-main-view-fg/80 whitespace-pre-wrap">
+                    {currentSummary.content}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {currentSummary.autoGenerated && (
+                      <Badge variant="outline" className="text-[10px]">
+                        AI 生成
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className="text-[10px]">
+                      已保存
+                    </Badge>
+                  </div>
+                  <span className="text-xs text-main-view-fg/50">
+                    点击内容可编辑
+                  </span>
                 </div>
               </div>
             ) : (
-              <div className="p-3 bg-main-view-fg/5 rounded-lg">
-                <p className="text-sm text-main-view-fg/80 whitespace-pre-wrap">
-                  {currentSummary?.content || '暂无总结，点击刷新按钮生成'}
+              <div className="p-8 text-center space-y-3">
+                <IconBrain className="w-12 h-12 text-main-view-fg/20 mx-auto" />
+                <p className="text-sm text-main-view-fg/50">
+                  {messages.length === 0 ? '开始对话后可生成总结' : '点击上方按钮生成对话总结'}
                 </p>
-                {currentSummary?.autoGenerated && (
-                  <Badge variant="outline" className="mt-2 text-[10px]">
-                    AI 生成
-                  </Badge>
-                )}
               </div>
             )}
             

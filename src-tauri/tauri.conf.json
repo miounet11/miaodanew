@@ -85,6 +85,27 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["resources/LICENSE"]
+    "resources": ["resources/LICENSE"],
+    "macOS": {
+      "frameworks": [],
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "hardenedRuntime": true,
+      "entitlements": null,
+      "dmg": {
+        "appPosition": {
+          "x": 180,
+          "y": 170
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 170
+        },
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        }
+      }
+    }
   }
 }

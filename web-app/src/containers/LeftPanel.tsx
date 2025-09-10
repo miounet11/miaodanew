@@ -5,14 +5,14 @@ import {
   IconLayoutSidebar,
   IconDots,
   IconCirclePlusFilled,
-  IconSettingsFilled,
+  IconSettings,
   IconTrash,
   IconStar,
   IconMessageFilled,
-  IconAppsFilled,
+  IconApps,
   IconX,
   IconSearch,
-  IconClipboardSmileFilled,
+  IconClipboardSmile,
 } from '@tabler/icons-react'
 import { route } from '@/constants/routes'
 import ThreadList from './ThreadList'
@@ -46,34 +46,28 @@ import { useDownloadStore } from '@/hooks/useDownloadStore'
 import { PlatformFeatures } from '@/lib/platform/const'
 import { PlatformFeature } from '@/lib/platform/types'
 
-const mainMenus = [
-  {
-    title: 'common:newChat',
-    icon: IconCirclePlusFilled,
-    route: route.home,
-    isEnabled: true,
-  },
-  {
-    title: 'common:assistants',
-    icon: IconClipboardSmileFilled,
-    route: route.assistant,
-    isEnabled: true,
-  },
-  {
-    title: 'common:hub',
-    icon: IconAppsFilled,
-    route: route.hub.index,
-    isEnabled: PlatformFeatures[PlatformFeature.MODEL_HUB],
-  },
-  {
-    title: 'common:settings',
-    icon: IconSettingsFilled,
-    route: route.settings.general,
-    isEnabled: true,
-  },
-]
-
 const LeftPanel = () => {
+  const mainMenus = [
+    {
+      title: 'common:assistants',
+      icon: IconClipboardSmile,
+      route: route.assistant,
+      isEnabled: true,
+    },
+    {
+      title: 'common:hub',
+      icon: IconApps,
+      route: route.hub.index,
+      isEnabled: PlatformFeatures[PlatformFeature.MODEL_HUB],
+    },
+    {
+      title: 'common:settings',
+      icon: IconSettings,
+      route: route.settings.general,
+      isEnabled: true,
+    },
+  ]
+  
   const { open, setLeftPanel } = useLeftPanel()
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -201,7 +195,7 @@ const LeftPanel = () => {
       <aside
         ref={panelRef}
         className={cn(
-          'text-left-panel-fg overflow-hidden',
+          'text-left-panel-fg overflow-hidden flex flex-col',
           // Resizable context: full height and width, no margins
           isResizableContext && 'h-full w-full',
           // Small screen context: fixed positioning and styling
@@ -210,90 +204,62 @@ const LeftPanel = () => {
           // Default context: original styling
           !isResizableContext &&
             !isSmallScreen &&
-            'w-48 shrink-0 rounded-lg m-1.5 mr-0',
+            'w-48 shrink-0 rounded-lg m-1.5 mr-0 h-full',
           // Visibility controls
           open
             ? 'opacity-100 visibility-visible'
             : 'w-0 absolute -top-100 -left-100 visibility-hidden'
         )}
       >
-        <div className="relative h-10">
+        {/* macOS 窗口控制按钮占位 */}
+        {IS_MACOS && (
+          <div className="h-8" />
+        )}
+        
+        {/* 顶部区域 - Logo 和收起按钮 */}
+        <div className="flex items-center justify-between px-2 py-2">
+          {/* Miaoda Logo */}
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-xs">M</span>
+            </div>
+            <span className="text-left-panel-fg font-bold text-base tracking-wide">Miaoda</span>
+          </div>
+          
+          {/* 收起按钮 */}
           <button
-            className="absolute top-1/2 right-0 -translate-y-1/2 z-20"
+            className=""
             onClick={() => setLeftPanel(!open)}
           >
             <div className="size-6 cursor-pointer flex items-center justify-center rounded hover:bg-left-panel-fg/10 transition-all duration-200 ease-in-out data-[state=open]:bg-left-panel-fg/10">
               <IconLayoutSidebar size={18} className="text-left-panel-fg" />
             </div>
           </button>
+        </div>
+        
+        {/* 搜索框 */}
+        <div className="relative">
           {!IS_MACOS && (
             <div
               ref={searchContainerRef}
-              className={cn(
-                'relative top-1.5 mb-4 mt-1 z-50',
-                isResizableContext
-                  ? 'mx-2 w-[calc(100%-48px)]'
-                  : 'mx-1 w-[calc(100%-32px)]'
-              )}
+              className="px-2 py-2"
               data-ignore-outside-clicks
             >
-              <IconSearch className="absolute size-4 top-1/2 left-2 -translate-y-1/2 text-left-panel-fg/50" />
-              <input
-                type="text"
-                placeholder={t('common:search')}
-                className="w-full pl-7 pr-8 py-1 bg-left-panel-fg/10 rounded-sm text-left-panel-fg focus:outline-none focus:ring-1 focus:ring-left-panel-fg/10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              {searchTerm && (
-                <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-left-panel-fg/70 hover:text-left-panel-fg"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation() // prevent bubbling
-                    setSearchTerm('')
-                  }}
-                >
-                  <IconX size={14} />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col justify-between overflow-hidden mt-0 !h-[calc(100%-42px)]">
-          <div
-            className={cn(
-              'flex flex-col',
-              Object.keys(downloads).length > 0 || localDownloadingModels.size > 0
-                ? 'h-[calc(100%-200px)]'
-                : 'h-[calc(100%-140px)]'
-            )}
-          >
-            {IS_MACOS && (
-              <div
-                ref={searchContainerMacRef}
-                className={cn(
-                  'relative mb-4 mt-1',
-                  isResizableContext ? 'mx-2' : 'mx-1'
-                )}
-                data-ignore-outside-clicks
-              >
+              <div className="relative">
                 <IconSearch className="absolute size-4 top-1/2 left-2 -translate-y-1/2 text-left-panel-fg/50" />
                 <input
                   type="text"
                   placeholder={t('common:search')}
-                  className="w-full pl-7 pr-8 py-1 bg-left-panel-fg/10 rounded-sm text-left-panel-fg focus:outline-none focus:ring-1 focus:ring-left-panel-fg/10"
+                  className="w-full pl-7 pr-8 py-1.5 bg-left-panel-fg/10 rounded-md text-left-panel-fg focus:outline-none focus:ring-1 focus:ring-left-panel-fg/20"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
                   <button
-                    data-ignore-outside-clicks
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-left-panel-fg/70 hover:text-left-panel-fg"
                     onClick={(e) => {
                       e.preventDefault()
-                      e.stopPropagation() // prevent bubbling
+                      e.stopPropagation()
                       setSearchTerm('')
                     }}
                   >
@@ -301,9 +267,61 @@ const LeftPanel = () => {
                   </button>
                 )}
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* 对话列表区域 */}
+        <div className="flex flex-col overflow-hidden flex-1">
+          <div className="flex flex-col flex-1 overflow-hidden">
+            {IS_MACOS && (
+              <div
+                ref={searchContainerMacRef}
+                className="px-2 py-2"
+                data-ignore-outside-clicks
+              >
+                <div className="relative">
+                  <IconSearch className="absolute size-4 top-1/2 left-2 -translate-y-1/2 text-left-panel-fg/50" />
+                  <input
+                    type="text"
+                    placeholder={t('common:search')}
+                    className="w-full pl-7 pr-8 py-1.5 bg-left-panel-fg/10 rounded-md text-left-panel-fg focus:outline-none focus:ring-1 focus:ring-left-panel-fg/20"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  {searchTerm && (
+                    <button
+                      data-ignore-outside-clicks
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-left-panel-fg/70 hover:text-left-panel-fg"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setSearchTerm('')
+                      }}
+                    >
+                      <IconX size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
-            <div className="flex flex-col w-full overflow-y-auto overflow-x-hidden">
-              <div className="h-full w-full overflow-y-auto">
+            
+            {/* 新建聊天按钮 - 放在搜索框下面 */}
+            <div className="px-2 pb-2">
+              <Link
+                to={route.home}
+                onClick={() => {
+                  isSmallScreen && setLeftPanel(false)
+                }}
+                className="relative flex items-center justify-center gap-2 w-full py-2 px-3 bg-gradient-to-r from-left-panel-fg/5 to-left-panel-fg/10 hover:from-left-panel-fg/10 hover:to-left-panel-fg/15 text-left-panel-fg border border-left-panel-fg/20 hover:border-left-panel-fg/30 rounded-md transition-all duration-200 group shadow-sm hover:shadow-md"
+              >
+                <div className="absolute inset-0 rounded-md bg-gradient-to-r from-transparent via-left-panel-fg/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <IconCirclePlusFilled size={18} className="relative text-left-panel-fg/70 group-hover:text-left-panel-fg transition-colors" />
+                <span className="relative font-medium text-sm">{t('common:newChat')}</span>
+              </Link>
+            </div>
+            <div className="flex flex-col flex-1 w-full overflow-y-auto overflow-x-hidden">
+              <div className="flex-1 w-full overflow-y-auto">
                 {favoritedThreads.length > 0 && (
                   <>
                     <div className="flex items-center justify-between mb-2">
@@ -476,46 +494,36 @@ const LeftPanel = () => {
               </div>
             </div>
           </div>
-
-          <div className="space-y-1 shrink-0 py-1 mt-2">
-            {/* Miaoda Logo */}
-            <div className="mb-3 px-1">
-              <div className="flex items-center gap-2 py-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-sm">M</span>
-                </div>
-                <span className="text-left-panel-fg font-bold text-lg tracking-wide">Miaoda</span>
-              </div>
-            </div>
-            
-            {mainMenus.map((menu) => {
-              if (!menu.isEnabled) {
-                  return null
-              }
-              const isActive =
-                currentPath.includes(route.settings.index) &&
-                menu.route.includes(route.settings.index)
-              return (
-                <Link
-                  key={menu.title}
-                  to={menu.route}
-                  onClick={() => isSmallScreen && setLeftPanel(false)}
-                  data-test-id={`menu-${menu.title}`}
-                  className={cn(
-                    'flex items-center gap-1.5 cursor-pointer hover:bg-left-panel-fg/10 py-1 px-1 rounded',
-                    isActive
-                      ? 'bg-left-panel-fg/10'
-                      : '[&.active]:bg-left-panel-fg/10'
-                  )}
-                >
-                  <menu.icon size={18} className="text-left-panel-fg/70" />
-                  <span className="font-medium text-left-panel-fg/90">
-                    {t(menu.title)}
-                  </span>
-                </Link>
-              )
-            })}
+        </div>
+        
+        {/* 下载管理 */}
+        {(Object.keys(downloads).length > 0 || localDownloadingModels.size > 0) && (
+          <div className="shrink-0 border-t border-left-panel-fg/10 pt-2">
             <DownloadManagement />
+          </div>
+        )}
+        
+        {/* 底部菜单 - 文字形式 */}
+        <div className="shrink-0 border-t border-left-panel-fg/10">
+          <div className="px-2 py-2 space-y-1">
+            {mainMenus.filter(m => m.isEnabled).map((menu) => (
+              <Link
+                key={menu.title}
+                to={menu.route}
+                onClick={() => isSmallScreen && setLeftPanel(false)}
+                data-test-id={`menu-${menu.title}`}
+                className={cn(
+                  'flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-left-panel-fg/5 transition-all',
+                  'text-left-panel-fg/60 hover:text-left-panel-fg/80',
+                  currentPath.includes(route.settings.index) && menu.route.includes(route.settings.index)
+                    ? 'bg-left-panel-fg/5 text-left-panel-fg/80'
+                    : '[&.active]:bg-left-panel-fg/5 [&.active]:text-left-panel-fg/80'
+                )}
+              >
+                <menu.icon size={16} className="shrink-0" />
+                <span className="text-xs">{t(menu.title)}</span>
+              </Link>
+            ))}
           </div>
         </div>
       </aside>

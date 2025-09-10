@@ -144,7 +144,7 @@ pub fn run() {
     app.run(|app, event| match event {
         RunEvent::Exit => {
             // This is called when the app is actually exiting (e.g., macOS dock quit)
-            // We can't prevent this, so run cleanup quickly
+            // We can't prevent this, so run cleanup quickly with timeout
             let app_handle = app.clone();
             tokio::task::block_in_place(|| {
                 tauri::async_runtime::block_on(async {
@@ -154,10 +154,22 @@ pub fn run() {
                         let _ = window.emit("kill-mcp-servers", ());
                     }
 
-                    // Quick cleanup with shorter timeout
+                    // Quick cleanup with 3-second timeout to avoid hanging
+                    let cleanup_timeout = std::time::Duration::from_secs(3);
                     let state = app_handle.state::<AppState>();
-                    let _ = clean_up_mcp_servers(state).await;
-                    let _ = cleanup_llama_processes(app.clone()).await;
+                    
+                    // Run cleanup tasks concurrently with timeout
+                    let cleanup_future = async {
+                        let (_, _) = tokio::join!(
+                            clean_up_mcp_servers(state),
+                            cleanup_llama_processes(app.clone())
+                        );
+                    };
+
+                    // Apply timeout to prevent hanging
+                    if let Err(_) = tokio::time::timeout(cleanup_timeout, cleanup_future).await {
+                        log::warn!("应用退出清理超时，强制退出以避免用户等待过久");
+                    }
                 });
             });
         }

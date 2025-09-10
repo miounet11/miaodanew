@@ -160,14 +160,14 @@ function ModelProviders() {
               {providers.map((provider, index) => (
                 <CardItem
                   key={index}
-                  className={provider.provider === 'openai-compatible' ? 'bg-gradient-to-r from-blue-500/5 to-blue-600/5 border border-blue-500/20' : ''}
+                  className={provider.provider === 'miaoda' ? 'bg-gradient-to-r from-blue-500/5 to-blue-600/5 border border-blue-500/20' : ''}
                   title={
                     <div className="flex items-center gap-3">
                       <ProvidersAvatar provider={provider} />
                       <div>
                         <h3 className="font-medium flex items-center gap-2">
                           {getProviderTitle(provider.provider)}
-                          {provider.provider === 'openai-compatible' && (
+                          {provider.provider === 'miaoda' && (
                             <span className="text-[10px] font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2 py-0.5 rounded-full shadow-sm">
                               FREE
                             </span>

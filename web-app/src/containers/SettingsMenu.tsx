@@ -230,7 +230,7 @@ const SettingsMenu = () => {
                             'group flex px-3 py-2 items-center gap-2.5 cursor-pointer hover:bg-main-view-fg/6 w-full rounded-lg transition-all duration-200 ease-in-out text-main-view-fg/75 relative',
                             isActive && 'bg-main-view-fg/8 border-l-2 border-blue-500/50 shadow-sm',
                             // Special styling for Miaoda provider - free service
-                            provider.provider === 'openai-compatible' && 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 hover:from-blue-500/15 hover:to-blue-600/15 border border-blue-500/20',
+                            provider.provider === 'miaoda' && 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 hover:from-blue-500/15 hover:to-blue-600/15 border border-blue-500/20',
                             // hidden for llama.cpp provider for setup remote provider
                             provider.provider === 'llama.cpp' &&
                               stepSetupRemoteProvider &&
@@ -254,7 +254,7 @@ const SettingsMenu = () => {
                               {getProviderTitle(provider.provider)}
                             </span>
                           </div>
-                          {provider.provider === 'openai-compatible' && (
+                          {provider.provider === 'miaoda' && (
                             <span className="absolute top-1 right-2 text-[10px] font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-white px-2 py-0.5 rounded-full shadow-sm">
                               FREE
                             </span>

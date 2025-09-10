@@ -166,14 +166,14 @@ export const sendCompletion = async (
   let providerName = provider.provider as unknown as keyof typeof models
 
   if (!Object.keys(models).some((key) => key === providerName))
-    providerName = 'openai-compatible'
+    providerName = 'openai' as keyof typeof models
 
   const tokenJS = new TokenJS({
     apiKey: provider.api_key ?? (await getServiceHub().core().getAppToken()) ?? '',
     // TODO: Retrieve from extension settings
     baseURL: provider.base_url,
-    // Use Tauri's fetch to avoid CORS issues for openai-compatible providers and custom providers
-    ...((providerName === 'openai-compatible' || String(providerName).includes('custom')) && { fetch: getServiceHub().providers().fetch() }),
+    // Use Tauri's fetch to avoid CORS issues for miaoda providers and custom providers
+    ...((provider.provider === 'miaoda' || String(provider.provider).includes('custom')) && { fetch: getServiceHub().providers().fetch() }),
     // OpenRouter identification headers for Miaoda
     // ref: https://openrouter.ai/docs/api-reference/overview#headers
     ...(provider.provider === 'openrouter' && {

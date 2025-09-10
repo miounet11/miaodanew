@@ -824,21 +824,52 @@ pub async fn clean_up_mcp_servers(state: State<'_, AppState>) {
 pub async fn stop_mcp_servers(servers_state: SharedMcpServers) -> Result<(), String> {
     let mut servers_map = servers_state.lock().await;
     let keys: Vec<String> = servers_map.keys().cloned().collect();
+    
+    // Create tasks for stopping all servers concurrently
+    let mut stop_tasks = Vec::new();
+    
     for key in keys {
         if let Some(service) = servers_map.remove(&key) {
-            match service {
-                RunningServiceEnum::NoInit(service) => {
-                    log::info!("Stopping server {key}...");
-                    service.cancel().await.map_err(|e| e.to_string())?;
+            let key_clone = key.clone();
+            let task = tokio::spawn(async move {
+                // Apply 2-second timeout for each server stop operation
+                let stop_timeout = Duration::from_secs(2);
+                let stop_future = async {
+                    match service {
+                        RunningServiceEnum::NoInit(service) => {
+                            log::info!("正在停止服务器 {key_clone}...");
+                            service.cancel().await
+                        }
+                        RunningServiceEnum::WithInit(service) => {
+                            log::info!("正在停止服务器 {key_clone} (带初始化)...");
+                            service.cancel().await
+                        }
+                    }
+                };
+                
+                match timeout(stop_timeout, stop_future).await {
+                    Ok(result) => {
+                        match result {
+                            Ok(_) => log::info!("服务器 {key_clone} 已成功停止"),
+                            Err(e) => log::warn!("停止服务器 {key_clone} 时出错: {e}"),
+                        }
+                    }
+                    Err(_) => {
+                        log::warn!("停止服务器 {key_clone} 超时，强制继续");
+                    }
                 }
-                RunningServiceEnum::WithInit(service) => {
-                    log::info!("Stopping server {key} with initialization...");
-                    service.cancel().await.map_err(|e| e.to_string())?;
-                }
-            }
+            });
+            stop_tasks.push(task);
         }
     }
-    drop(servers_map); // Release the lock after stopping
+    
+    drop(servers_map); // Release the lock immediately
+    
+    // Wait for all stop tasks to complete or timeout
+    for task in stop_tasks {
+        let _ = task.await;
+    }
+    
     Ok(())
 }
 
