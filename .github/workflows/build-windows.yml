@@ -10,20 +10,17 @@ on:
         required: true
         default: '0.6.599'
   
-  # 推送到main分支时触发
+  # 推送到main分支或创建标签时触发
   push:
     branches:
       - main
+    tags:
+      - 'v*'
     paths:
       - 'src-tauri/**'
       - 'web-app/**'
       - 'core/**'
       - '.github/workflows/build-windows.yml'
-  
-  # 创建标签时触发
-  push:
-    tags:
-      - 'v*'
 
 jobs:
   build-windows:
