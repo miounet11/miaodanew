@@ -38,7 +38,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
+
+      # 2.5 启用 Corepack 和 Yarn
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
 
       # 3. 设置 Rust
       - name: Setup Rust
@@ -55,7 +60,7 @@ jobs:
       # 5. 安装前端依赖
       - name: Install frontend dependencies
         run: |
-          yarn install --immutable
+          yarn install --network-timeout 600000
 
       # 6. 获取版本号
       - name: Get version
