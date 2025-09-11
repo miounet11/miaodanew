@@ -101,21 +101,17 @@ jobs:
           
           echo "Updated version to $VERSION"
 
-      # 8. 构建依赖模块
-      - name: Build dependency modules
+      # 8. 构建应用
+      - name: Build app
         run: |
           yarn build:core
           yarn build:extensions-web
-          
-      # 9. 构建 Tauri 应用
-      - name: Build Tauri app
-        run: |
           yarn build:tauri
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-      # 10. 准备发布文件
+      # 9. 准备发布文件
       - name: Prepare release files
         shell: bash
         run: |
@@ -142,7 +138,7 @@ jobs:
           ls -la
           cd ..
 
-      # 11. 上传构建产物
+      # 10. 上传构建产物
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -150,7 +146,7 @@ jobs:
           path: release/*
           retention-days: 7
 
-      # 12. 创建 Release（仅在标签触发时）
+      # 11. 创建 Release（仅在标签触发时）
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
@@ -175,7 +171,7 @@ jobs:
             2. 双击运行安装程序
             3. 按照安装向导完成安装
 
-      # 13. 输出下载链接
+      # 12. 输出下载链接
       - name: Output download URL
         if: always()
         run: |
