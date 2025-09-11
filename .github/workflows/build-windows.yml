@@ -93,19 +93,12 @@ jobs:
         with:
           version: "v0.9.0"
 
-      # 3.5 安装 Rust 构建工具（在 Rust 设置后）
-      - name: Install Rust build tools  
-        run: |
-          # 检查缓存是否存在 ctoml，不存在则安装
-          if (!(Test-Path "$env:USERPROFILE\.cargo\bin\ctoml.exe")) {
-            cargo install ctoml --version 0.1.0
-          }
-          
-          # 验证安装
-          if (Test-Path "$env:USERPROFILE\.cargo\bin\ctoml.exe") {
-            Write-Output "ctoml already installed"
-          }
-        shell: powershell
+      # 3.5 安装 Rust 构建工具（可选，如果需要 ctoml）
+      # 注意：ctoml 可能不是必需的，暂时跳过以避免 sccache 冲突
+      # - name: Install Rust build tools  
+      #   run: |
+      #     cargo install ctoml --version 0.1.0
+      #   shell: powershell
 
       # 3.6 安装 .NET 构建工具
       - name: Install .NET build tools
@@ -125,6 +118,7 @@ jobs:
             Write-Output "AzureSignTool installation failed"
           }
         shell: powershell
+        continue-on-error: true
 
       # 4. 增强的缓存策略
       # 4.1 Rust 缓存（增强版）
@@ -162,7 +156,6 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/bin/ctoml*
             ~/.cargo/bin/sccache*
             ~/.dotnet/tools
             ~/.local/share/applications
