@@ -14,16 +14,16 @@ export interface ConversationalWebModule {
   default: new (...args: ExtensionConstructorParams) => ConversationalExtension
 }
 
-export interface JanProviderWebModule {
+export interface MiaodaProviderWebModule {
   default: new (...args: ExtensionConstructorParams) => AIEngine
 }
 
-export type WebExtensionModule = AssistantWebModule | ConversationalWebModule | JanProviderWebModule
+export type WebExtensionModule = AssistantWebModule | ConversationalWebModule | MiaodaProviderWebModule
 
 export interface WebExtensionRegistry {
   'assistant-web': () => Promise<AssistantWebModule>
   'conversational-web': () => Promise<ConversationalWebModule>
-  'jan-provider-web': () => Promise<JanProviderWebModule>
+  'miaoda-provider-web': () => Promise<MiaodaProviderWebModule>
 }
 
 export type WebExtensionName = keyof WebExtensionRegistry

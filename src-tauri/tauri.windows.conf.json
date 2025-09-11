@@ -4,6 +4,9 @@
     "resources": ["resources/pre-install/**/*"],
     "externalBin": ["resources/bin/bun", "resources/bin/uv"],
     "windows": {
+      "nsis": {
+        "template": "tauri.bundle.windows.nsis.template"
+      },
       "signCommand": "powershell -ExecutionPolicy Bypass -File ./sign.ps1 %1"
     }
   }

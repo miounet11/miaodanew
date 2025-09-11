@@ -1,13 +1,13 @@
 /**
  * Web Extensions Package
- * Contains browser-compatible extensions for Jan AI
+ * Contains browser-compatible extensions for Miaoda AI
  */
 
 import type { WebExtensionRegistry } from './types'
 
 export { default as AssistantExtensionWeb } from './assistant-web'
 export { default as ConversationalExtensionWeb } from './conversational-web'
-export { default as JanProviderWeb } from './jan-provider-web'
+export { default as MiaodaProviderWeb } from './miaoda-provider-web'
 
 // Re-export types
 export type { 
@@ -17,12 +17,12 @@ export type {
   WebExtensionLoader,
   AssistantWebModule,
   ConversationalWebModule,
-  JanProviderWebModule
+  MiaodaProviderWebModule
 } from './types'
 
 // Extension registry for dynamic loading
 export const WEB_EXTENSIONS: WebExtensionRegistry = {
   'assistant-web': () => import('./assistant-web'),
   'conversational-web': () => import('./conversational-web'),
-  'jan-provider-web': () => import('./jan-provider-web'),
+  'miaoda-provider-web': () => import('./miaoda-provider-web'),
 }

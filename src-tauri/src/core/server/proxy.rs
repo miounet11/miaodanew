@@ -666,7 +666,7 @@ pub async fn start_server(
     });
 
     let server = Server::bind(&addr).serve(make_svc);
-    log::info!("Jan API server started on http://{}", addr);
+    log::info!("Miaoda API server started on http://{}", addr);
 
     let server_task = tokio::spawn(async move {
         if let Err(e) = server.await {
@@ -688,7 +688,7 @@ pub async fn stop_server(
     if let Some(handle) = handle_guard.take() {
         handle.abort();
         *handle_guard = None;
-        log::info!("Jan API server stopped");
+        log::info!("Miaoda API server stopped");
     } else {
         log::debug!("Server was not running");
     }

@@ -1,4 +1,8 @@
-name: tauri-build-windows-x64
+# DEPRECATED: This workflow is deprecated and replaced by build-windows.yml
+# Please use .github/workflows/build-windows.yml instead
+# This file is kept for compatibility but will be removed in future versions
+
+name: "[DEPRECATED] tauri-build-windows-x64"
 on:
   workflow_call:
     inputs:

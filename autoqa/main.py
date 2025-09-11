@@ -49,16 +49,16 @@ def get_computer_config():
             "os_type": "linux"
         }
 
-def get_default_jan_path():
-    """Get default Jan app path based on OS"""
+def get_default_miaoda_path():
+    """Get default Miaoda app path based on OS"""
     if IS_WINDOWS:
         # Try multiple common locations on Windows
         possible_paths = [
-            os.path.expanduser(r"~\AppData\Local\Programs\jan\Jan.exe"),
-            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs', 'jan', 'Jan.exe'),
-            os.path.join(os.environ.get('APPDATA', ''), 'jan', 'Jan.exe'),
-            r"C:\Program Files\jan\Jan.exe",
-            r"C:\Program Files (x86)\jan\Jan.exe"
+            os.path.expanduser(r"~\AppData\Local\Programs\miaoda\Miaoda.exe"),
+            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs', 'miaoda', 'Miaoda.exe'),
+            os.path.join(os.environ.get('APPDATA', ''), 'miaoda', 'Miaoda.exe'),
+            r"C:\Program Files\miaoda\Miaoda.exe",
+            r"C:\Program Files (x86)\miaoda\Miaoda.exe"
         ]
         
         # Return first existing path, or first option as default
@@ -72,10 +72,10 @@ def get_default_jan_path():
     elif IS_LINUX:
         # Linux possible locations
         possible_paths = [
-            "/usr/bin/Jan",
-            "/usr/local/bin/Jan",
-            os.path.expanduser("~/Applications/Jan/Jan"),
-            "/opt/Jan/Jan"
+            "/usr/bin/Miaoda",
+            "/usr/local/bin/Miaoda",
+            os.path.expanduser("~/Applications/Miaoda/Miaoda"),
+            "/opt/Miaoda/Miaoda"
         ]
         
         # Return first existing path, or first option as default
@@ -84,13 +84,13 @@ def get_default_jan_path():
                 return path
         
         # Default to nightly build path
-        return "/usr/bin/Jan"
+        return "/usr/bin/Miaoda"
     
     elif IS_MACOS:
         # macOS defaults
         possible_paths = [
-            "/Applications/Jan.app/Contents/MacOS/Jan",
-            os.path.expanduser("~/Applications/Jan.app/Contents/MacOS/Jan")
+            "/Applications/Miaoda.app/Contents/MacOS/Miaoda",
+            os.path.expanduser("~/Applications/Miaoda.app/Contents/MacOS/Miaoda")
         ]
         
         for path in possible_paths:
@@ -101,7 +101,7 @@ def get_default_jan_path():
     
     else:
         # Unknown platform
-        return "jan"
+        return "miaoda"
 
 def start_computer_server():
     """Start computer server in background thread"""
@@ -177,8 +177,8 @@ Examples:
   # Run with ReportPortal integration
   python main.py --enable-reportportal --rp-token YOUR_TOKEN
   
-  # Run with custom Jan app path
-  python main.py --jan-app-path "C:/Custom/Path/Jan.exe"
+  # Run with custom Miaoda app path
+  python main.py --miaoda-app-path "C:/Custom/Path/Miaoda.exe"
   
   # Run with different model
   python main.py --model-name "gpt-4" --model-base-url "https://api.openai.com/v1"
@@ -188,8 +188,8 @@ Examples:
         """
     )
     
-    # Get default Jan path
-    default_jan_path = get_default_jan_path()
+    # Get default Miaoda path
+    default_miaoda_path = get_default_miaoda_path()
     
     # Computer server arguments
     server_group = parser.add_argument_group('Computer Server Configuration')
@@ -229,17 +229,17 @@ Examples:
         help='Custom launch name for ReportPortal (env: LAUNCH_NAME, default: auto-generated with timestamp)'
     )
     
-    # Jan app arguments
-    jan_group = parser.add_argument_group('Jan Application Configuration')
-    jan_group.add_argument(
-        '--jan-app-path',
-        default=os.getenv('JAN_APP_PATH', default_jan_path),
-        help=f'Path to Jan application executable (env: JAN_APP_PATH, default: auto-detected or {default_jan_path})'
+    # Miaoda app arguments
+    miaoda_group = parser.add_argument_group('Miaoda Application Configuration')
+    miaoda_group.add_argument(
+        '--miaoda-app-path',
+        default=os.getenv('MIAODA_APP_PATH', default_miaoda_path),
+        help=f'Path to Miaoda application executable (env: MIAODA_APP_PATH, default: auto-detected or {default_miaoda_path})'
     )
-    jan_group.add_argument(
-        '--jan-process-name',
-        default=os.getenv('JAN_PROCESS_NAME', 'Jan.exe' if IS_WINDOWS else ('Jan' if IS_MACOS else 'Jan-nightly')),
-        help='Jan process name for monitoring (env: JAN_PROCESS_NAME, default: platform-specific)'
+    miaoda_group.add_argument(
+        '--miaoda-process-name',
+        default=os.getenv('MIAODA_PROCESS_NAME', 'Miaoda.exe' if IS_WINDOWS else ('Miaoda' if IS_MACOS else 'Miaoda-nightly')),
+        help='Miaoda process name for monitoring (env: MIAODA_PROCESS_NAME, default: platform-specific)'
     )
     
     # Model/Agent arguments

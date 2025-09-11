@@ -10,6 +10,14 @@ on:
         required: true
         default: '0.6.599'
   
+  # 工作流调用（供其他工作流使用）
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to build'
+        required: true
+        type: string
+  
   # 推送到main分支或创建标签时触发
   push:
     branches:
@@ -74,6 +82,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" == "workflow_call" ]; then
+            VERSION="${{ inputs.version }}"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
           else
@@ -82,8 +92,8 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Building version: $VERSION"
 
-      # 7. 更新版本号
-      - name: Update version
+      # 7. 更新版本号和配置NSIS模板
+      - name: Update version and configure NSIS template
         shell: bash
         run: |
           VERSION=${{ steps.get_version.outputs.VERSION }}
@@ -95,11 +105,42 @@ jobs:
           
           # 更新 tauri.conf.json
           jq --arg version "$VERSION" '.version = $version' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+          jq '.bundle.windows.nsis.template = "tauri.bundle.windows.nsis.template"' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
           
           # 更新 Cargo.toml（只更新 package 部分的版本）
           sed -i "0,/^version = \".*\"/s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
           
-          echo "Updated version to $VERSION"
+          # 处理NSIS模板中的占位符替换
+          WORKSPACE_DIR=$(pwd | sed 's/\\/\\\\/g')
+          
+          # 生成构建版本号（如 0.6.599.0）
+          BUILD_VERSION="${VERSION}.0"
+          
+          # 替换NSIS模板中的占位符（确保替换所有 jan_ 相关的占位符）
+          sed -i "s/jan_productname/Miaoda/g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s/jan_mainbinaryname/miaoda/g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s/jan_version/$VERSION/g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s/jan_build/$BUILD_VERSION/g" src-tauri/tauri.bundle.windows.nsis.template
+          
+          # 替换路径环境变量占位符（使用Windows格式的路径）
+          # 获取当前工作目录并转换为Windows路径格式
+          CURRENT_DIR=$(pwd | sed 's#/#\\#g')
+          
+          sed -i "s|\${INSTALLERICON}|${CURRENT_DIR}\\src-tauri\\icons\\icon.ico|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${MAINBINARYSRCPATH}|${CURRENT_DIR}\\src-tauri\\target\\release\\miaoda.exe|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${ADDITIONALPLUGINSPATH}|${CURRENT_DIR}\\src-tauri\\target\\release\\nsis\\x64\\Plugins\\x86-unicode\\additional|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${NSISENGLISHPATH}|${CURRENT_DIR}\\src-tauri\\target\\release\\nsis\\x64\\English.nsh|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${VULKANLIBPATH}|${CURRENT_DIR}\\src-tauri\\resources\\lib\\vulkan-1.dll|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${LICENSEPATH}|${CURRENT_DIR}\\src-tauri\\resources\\LICENSE|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${PREINSTALLPATH}|${CURRENT_DIR}\\src-tauri\\resources\\pre-install\\|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${BUNEXEPATH}|${CURRENT_DIR}\\src-tauri\\resources\\bin\\bun-x86_64-pc-windows-msvc.exe|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${UVEXEPATH}|${CURRENT_DIR}\\src-tauri\\resources\\bin\\uv-x86_64-pc-windows-msvc.exe|g" src-tauri/tauri.bundle.windows.nsis.template
+          
+          echo "Updated version to $VERSION and configured NSIS template"
+          
+          # 调试：显示NSIS模板的关键部分
+          echo "=== NSIS Template Configuration ==="
+          head -n 50 src-tauri/tauri.bundle.windows.nsis.template | tail -n 20
 
       # 8. 构建应用
       - name: Build app

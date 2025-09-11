@@ -1,10 +1,20 @@
-# Makefile for Jan Electron App - Build, Lint, Test, and Clean
+# Makefile for Miaoda Desktop App - Build, Lint, Test, and Clean
+# 
+# DEPRECATED NOTICE: This Makefile is maintained for compatibility but the preferred
+# build method is using Yarn scripts directly. See package.json for available scripts.
+#
+# Recommended commands:
+#   yarn build:tauri:win32  (instead of make build on Windows)
+#   yarn build              (cross-platform build)
+#   yarn dev                (development mode)
+#
+# This Makefile will be phased out in favor of unified Yarn-based build system.
 
 REPORT_PORTAL_URL ?= ""
 REPORT_PORTAL_API_KEY ?= ""
 REPORT_PORTAL_PROJECT_NAME ?= ""
-REPORT_PORTAL_LAUNCH_NAME ?= "Jan App"
-REPORT_PORTAL_DESCRIPTION ?= "Jan App report"
+REPORT_PORTAL_LAUNCH_NAME ?= "Miaoda App"
+REPORT_PORTAL_DESCRIPTION ?= "Miaoda App report"
 
 # Default target, does nothing
 all:
@@ -84,7 +94,7 @@ ifeq ($(OS),Windows_NT)
 	-powershell -Command "Remove-Item -Recurse -Force ./electron/pre-install/*.tgz"
 	-powershell -Command "Remove-Item -Recurse -Force ./src-tauri/resources"
 	-powershell -Command "Remove-Item -Recurse -Force ./src-tauri/target"
-	-powershell -Command "if (Test-Path \"$($env:USERPROFILE)\jan\extensions\") { Remove-Item -Path \"$($env:USERPROFILE)\jan\extensions\" -Recurse -Force }"
+	-powershell -Command "if (Test-Path \"$($env:USERPROFILE)\miaoda\extensions\") { Remove-Item -Path \"$($env:USERPROFILE)\miaoda\extensions\" -Recurse -Force }"
 else ifeq ($(shell uname -s),Linux)
 	find . -name "node_modules" -type d -prune -exec rm -rf '{}' +
 	find . -name ".next" -type d -exec rm -rf '{}' +
@@ -100,8 +110,8 @@ else ifeq ($(shell uname -s),Linux)
 	rm -rf ./electron/pre-install/*.tgz
 	rm -rf ./src-tauri/resources
 	rm -rf ./src-tauri/target
-	rm -rf "~/jan/extensions"
-	rm -rf "~/.cache/jan*"
+	rm -rf "~/miaoda/extensions"
+	rm -rf "~/.cache/miaoda*"
 	rm -rf "./.cache"
 else
 	find . -name "node_modules" -type d -prune -exec rm -rfv '{}' +
@@ -117,6 +127,6 @@ else
 	rm -rfv ./electron/pre-install/*.tgz
 	rm -rfv ./src-tauri/resources
 	rm -rfv ./src-tauri/target
-	rm -rfv ~/jan/extensions
-	rm -rfv ~/Library/Caches/jan*
+	rm -rfv ~/miaoda/extensions
+	rm -rfv ~/Library/Caches/miaoda*
 endif

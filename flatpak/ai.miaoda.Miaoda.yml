@@ -1,8 +1,8 @@
-id: ai.jan.Jan
+id: ai.miaoda.Miaoda
 runtime: org.gnome.Platform
 runtime-version: '48'
 sdk: org.gnome.Sdk
-command: Jan
+command: Miaoda
 finish-args:
   - --socket=wayland # Permission needed to show the window
   - --socket=fallback-x11 # Permission needed to show the window on X11
@@ -98,21 +98,21 @@ modules:
     buildsystem: simple
     sources:
       - type: file
-        url: https://catalog.jan.ai/flatpak/Jan_0.6.8_amd64.deb
+        url: https://catalog.miaoda.xin/flatpak/Miaoda_0.6.8_amd64.deb
         sha256: 15d1368c318a3853bad4fc3646f88afdbf9f52b6416a4734f7a297741d171f28
         only-arches: [x86_64]
       - type: file
-        path: ai.jan.Jan.metainfo.xml
+        path: ai.miaoda.Miaoda.metainfo.xml
     build-commands:
       - ar -x *.deb
       - tar -xf data.tar.gz
-      - 'install -Dm755 usr/bin/Jan /app/bin/Jan'
+      - 'install -Dm755 usr/bin/Miaoda /app/bin/Miaoda'
       - 'install -Dm755 usr/bin/bun /app/bin/bun'
       - 'install -Dm755 usr/bin/uv /app/bin/uv'
       - cp -rv usr/lib/* /app/lib/.
-      - install -Dm644 usr/share/applications/Jan.desktop /app/share/applications/ai.jan.Jan.desktop
-      - sed -e 's/Icon=Jan/Icon=ai.jan.Jan/g' -e 's#Exec=Jan#Exec=/app/bin/Jan#g' -i /app/share/applications/ai.jan.Jan.desktop
-      - install -Dm644 usr/share/icons/hicolor/128x128/apps/Jan.png /app/share/icons/hicolor/128x128/apps/ai.jan.Jan.png
-      - install -Dm644 usr/share/icons/hicolor/32x32/apps/Jan.png /app/share/icons/hicolor/32x32/apps/ai.jan.Jan.png
-      - install -Dm644 usr/share/icons/hicolor/256x256@2/apps/Jan.png /app/share/icons/hicolor/256x256@2/apps/ai.jan.Jan.png
-      - install -Dm644 ai.jan.Jan.metainfo.xml /app/share/metainfo/ai.jan.Jan.rosary.metainfo.xml
+      - install -Dm644 usr/share/applications/Miaoda.desktop /app/share/applications/ai.miaoda.Miaoda.desktop
+      - sed -e 's/Icon=Miaoda/Icon=ai.miaoda.Miaoda/g' -e 's#Exec=Miaoda#Exec=/app/bin/Miaoda#g' -i /app/share/applications/ai.miaoda.Miaoda.desktop
+      - install -Dm644 usr/share/icons/hicolor/128x128/apps/Miaoda.png /app/share/icons/hicolor/128x128/apps/ai.miaoda.Miaoda.png
+      - install -Dm644 usr/share/icons/hicolor/32x32/apps/Miaoda.png /app/share/icons/hicolor/32x32/apps/ai.miaoda.Miaoda.png
+      - install -Dm644 usr/share/icons/hicolor/256x256@2/apps/Miaoda.png /app/share/icons/hicolor/256x256@2/apps/ai.miaoda.Miaoda.png
+      - install -Dm644 ai.miaoda.Miaoda.metainfo.xml /app/share/metainfo/ai.miaoda.Miaoda.rosary.metainfo.xml
