@@ -61,13 +61,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'yarn'
+          # 不使用 yarn 缓存，因为需要先启用 Corepack
 
       # 2.5 启用 Corepack 和 Yarn (锁定版本)
       - name: Enable Corepack
         run: |
           corepack enable
           corepack prepare yarn@4.5.3 --activate
+          yarn --version
 
       # 2.6 安装 Windows 构建工具
       - name: Install Windows build tools
@@ -261,50 +262,50 @@ jobs:
       # 8. 并行构建应用（性能优化的核心）
       - name: Parallel build (Performance Optimized)
         run: |
-          # 启用构建时间统计
+          # Enable build time statistics
           $start_time = Get-Date
           
-          # 设置环境变量以优化构建
-          $env:CARGO_BUILD_JOBS = "0"  # 使用所有 CPU 核心
+          # Set environment variables for build optimization
+          $env:CARGO_BUILD_JOBS = "0"  # Use all CPU cores
           $env:CARGO_TARGET_DIR = "./src-tauri/target"
           
           # 并行执行前端构建
-          Write-Output "=== 开始并行构建 ==="
+          Write-Output "=== Starting Parallel Build ==="
           
-          # 阶段1：核心模块和扩展构建（可以并行）
-          Write-Output "阶段1：构建核心模块和扩展..."
+          # Stage 1: Core modules and extensions build (parallel)
+          Write-Output "Stage 1: Building core modules and extensions..."
           Start-Process powershell -ArgumentList "-Command", "yarn build:core; Write-Output 'Core build completed'" -NoNewWindow -PassThru | Out-Null
           Start-Process powershell -ArgumentList "-Command", "yarn build:extensions-web; Write-Output 'Extensions-web build completed'" -NoNewWindow -PassThru | Out-Null
           
-          # 等待核心构建完成
+          # Wait for core build to complete
           do {
             Start-Sleep -Seconds 2
-            Write-Output "等待核心模块构建完成..."
+            Write-Output "Waiting for core modules build to complete..."
           } while (-not (Test-Path "core/dist" -PathType Container) -or -not (Test-Path "extensions-web/dist" -PathType Container))
           
-          Write-Output "阶段1完成：核心模块和扩展构建完成"
+          Write-Output "Stage 1 complete: Core modules and extensions built"
           
-          # 阶段2：Web应用构建
-          Write-Output "阶段2：构建Web应用..."
+          # Stage 2: Web application build
+          Write-Output "Stage 2: Building Web application..."
           yarn build:web
-          Write-Output "阶段2完成：Web应用构建完成"
+          Write-Output "Stage 2 complete: Web application built"
           
-          # 阶段3：Tauri构建（使用优化配置）
-          Write-Output "阶段3：构建Tauri应用..."
-          # 设置 Rust 编译优化
+          # Stage 3: Tauri build (with optimization)
+          Write-Output "Stage 3: Building Tauri application..."
+          # Set Rust compilation optimizations
           $env:RUSTFLAGS = "-C target-cpu=native -C opt-level=3"
           yarn build:tauri:win32
-          Write-Output "阶段3完成：Tauri应用构建完成"
+          Write-Output "Stage 3 complete: Tauri application built"
           
-          # 计算构建时间
+          # Calculate build time
           $end_time = Get-Date
           $build_duration = $end_time - $start_time
-          Write-Output "=== 构建完成 ==="
-          Write-Output "总构建时间: $($build_duration.TotalMinutes.ToString('F2')) 分钟"
+          Write-Output "=== Build Complete ==="
+          Write-Output "Total build time: $($build_duration.TotalMinutes.ToString('F2')) minutes"
           
-          # 显示缓存统计
+          # Display cache statistics
           if (Get-Command sccache -ErrorAction SilentlyContinue) {
-            Write-Output "=== sccache 统计 ==="
+            Write-Output "=== sccache Statistics ==="
             sccache --show-stats
           }
         shell: powershell
@@ -382,24 +383,24 @@ jobs:
       - name: Build Performance Report
         if: always()
         run: |
-          Write-Output "=== 构建性能报告 ==="
-          Write-Output "构建已完成！"
+          Write-Output "=== Build Performance Report ==="
+          Write-Output "Build completed!"
           
-          # 显示文件大小
+          # Display file sizes
           if (Test-Path "release") {
-            Write-Output "`n=== 输出文件大小 ==="
+            Write-Output "`n=== Output File Sizes ==="
             Get-ChildItem -Path "release" -File | ForEach-Object {
               $size = [math]::Round($_.Length / 1MB, 2)
               Write-Output "$($_.Name): $size MB"
             }
           }
           
-          # 显示最终的 sccache 统计
+          # Display final sccache statistics
           if (Get-Command sccache -ErrorAction SilentlyContinue) {
-            Write-Output "`n=== 最终缓存统计 ==="
+            Write-Output "`n=== Final Cache Statistics ==="
             sccache --show-stats
           }
           
-          Write-Output "`n=== 下载链接 ==="
+          Write-Output "`n=== Download Links ==="
           Write-Output "Artifacts: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         shell: powershell
