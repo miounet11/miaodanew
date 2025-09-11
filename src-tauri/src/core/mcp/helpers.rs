@@ -493,7 +493,7 @@ async fn schedule_mcp_start_task<R: Runtime>(
             reqwest::Client::builder()
                 .default_headers({
                     // Map envs to request headers
-                    let mut headers: tauri::http::HeaderMap = reqwest::header::HeaderMap::new();
+                    let mut headers = reqwest::header::HeaderMap::new();
                     for (key, value) in config_params.headers.iter() {
                         if let Some(v_str) = value.as_str() {
                             // Try to map env keys to HTTP header names (case-insensitive)
