@@ -41,9 +41,9 @@ env:
   CARGO_NET_RETRY: 3
   CARGO_HTTP_TIMEOUT: 300
   CARGO_HTTP_MULTIPLEXING: true
-  # 并行构建
-  CARGO_BUILD_JOBS: 0
-  MAKEFLAGS: "-j$(nproc)"
+  # 并行构建 - 不设置 CARGO_BUILD_JOBS，让 Cargo 自动决定
+  # CARGO_BUILD_JOBS 被移除，因为设置为 0 会导致错误
+  MAKEFLAGS: "-j4"
 
 jobs:
   build-windows:
@@ -266,7 +266,7 @@ jobs:
           $start_time = Get-Date
           
           # Set environment variables for build optimization
-          $env:CARGO_BUILD_JOBS = "0"  # Use all CPU cores
+          # CARGO_BUILD_JOBS removed - let Cargo decide automatically
           $env:CARGO_TARGET_DIR = "./src-tauri/target"
           
           # 并行执行前端构建
