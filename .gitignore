@@ -2,6 +2,7 @@
 error.log
 node_modules
 *.tgz
+!src-tauri/resources/pre-install/*.tgz
 dist
 build
 .DS_Store
