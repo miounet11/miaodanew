@@ -1,4 +1,4 @@
-# 喵岛 Web介绍页面设计方案
+# 妙答 Web介绍页面设计方案
 
 ## 页面整体架构
 
@@ -158,8 +158,8 @@ const footerLinks = {
 
 ### 页面标题和描述
 ```html
-<title>喵岛 (Miaoda) - 独立AI平台 | 本地部署，多模型支持</title>
-<meta name="description" content="喵岛是一款强大的独立AI应用，支持本地模型部署，保护您的隐私安全。跨平台运行，插件扩展，打造个性化AI体验。">
+<title>妙答 (Miaoda) - 独立AI平台 | 本地部署，多模型支持</title>
+<meta name="description" content="妙答是一款强大的独立AI应用，支持本地模型部署，保护您的隐私安全。跨平台运行，插件扩展，打造个性化AI体验。">
 ```
 
 ### 结构化数据

@@ -1,45 +1,11 @@
-# ============================================================================
-# Cargo 构建性能优化配置
-# ============================================================================
-
-[build]
-# Windows 目标优化
-target = "x86_64-pc-windows-msvc"
-
-# 并行编译配置
-jobs = 0  # 使用所有可用 CPU 核心
-
 [target.x86_64-pc-windows-msvc]
-# Windows 平台特定优化
+linker = "rust-lld"
 rustflags = [
-    # 启用更好的代码生成
-    "-C", "target-cpu=native",
-    # 优化内存布局
-    "-C", "opt-level=3",
-    # 减少调试信息
-    "-C", "debuginfo=0",
-    # 链接器优化
-    "-C", "link-arg=/OPT:REF",
-    "-C", "link-arg=/OPT:ICF",
+    "-Lnative=/tmp/xwin/crt/lib/x86_64",
+    "-Lnative=/tmp/xwin/sdk/lib/um/x86_64",
+    "-Lnative=/tmp/xwin/sdk/lib/ucrt/x86_64"
 ]
 
-# 注册表和源配置
-[source.crates-io]
-replace-with = "sparse-registry"
-
-[registries.crates-io]
-protocol = "sparse"
-
-# 缓存配置
-[net]
-retry = 3
-timeout = 300  # 5分钟超时
-
-# 并行网络请求
-git-fetch-with-cli = false
-
-[http]
-timeout = 300
-low-speed-limit = 1000
-multiplexing = true
-keep-alive = 30
+[env]
+CC_x86_64_pc_windows_msvc = "clang"
+CXX_x86_64_pc_windows_msvc = "clang++"

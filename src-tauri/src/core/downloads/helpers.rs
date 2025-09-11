@@ -339,7 +339,7 @@ pub async fn _download_files_internal(
 
         if !save_path.starts_with(&jan_data_folder) {
             return Err(format!(
-                "Path {} is outside of Miaoda data folder {},"
+                "Path {} is outside of Miaoda data folder {},",
                 save_path.display(),
                 jan_data_folder.display()
             ));

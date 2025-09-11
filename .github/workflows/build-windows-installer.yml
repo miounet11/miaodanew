@@ -1,0 +1,287 @@
+name: Build Windows Installer Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., 0.6.599)'
+        required: true
+        default: '0.6.599'
+      build_x86:
+        description: 'Build 32-bit version'
+        required: false
+        default: 'true'
+        type: boolean
+      build_x64:
+        description: 'Build 64-bit version'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-windows-packages:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            arch: x64
+            enabled: ${{ github.event.inputs.build_x64 == 'true' }}
+          - target: i686-pc-windows-msvc  
+            arch: x86
+            enabled: ${{ github.event.inputs.build_x86 == 'true' }}
+    
+    if: matrix.enabled
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      
+      - name: Enable Corepack and Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@4.5.3 --activate
+          yarn --version
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.77.2
+          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+      
+      - name: Install Windows build dependencies
+        run: |
+          # 安装必要的构建工具
+          choco install jq -y
+          
+          # 安装 NSIS (Nullsoft Scriptable Install System)
+          choco install nsis -y
+          
+          # 验证安装
+          makensis /VERSION
+          jq --version
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            .yarn/cache
+            node_modules
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('**/yarn.lock', '**/Cargo.lock') }}
+      
+      - name: Install dependencies
+        run: yarn install --immutable
+      
+      - name: Update version and configure
+        shell: bash
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          
+          # 更新版本号
+          jq --arg version "$VERSION" '.version = $version' web-app/package.json > web-app/package.json.tmp && mv web-app/package.json.tmp web-app/package.json
+          jq --arg version "$VERSION" '.version = $version' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+          sed -i "0,/^version = \".*\"/s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+          
+          echo "Updated version to $VERSION"
+      
+      - name: Build application
+        run: |
+          # 构建前端
+          yarn build:core
+          yarn build:extensions-web
+          yarn build:web
+          
+          # 构建 Tauri 应用
+          yarn tauri build --target ${{ matrix.target }}
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      
+      - name: Create standard Windows packages
+        shell: pwsh
+        run: |
+          $distDir = "dist/windows-packages"
+          $arch = "${{ matrix.arch }}"
+          $version = "${{ github.event.inputs.version }}"
+          $target = "${{ matrix.target }}"
+          
+          New-Item -ItemType Directory -Force -Path "$distDir/$arch"
+          New-Item -ItemType Directory -Force -Path "$distDir/portable"
+          
+          Write-Host "Creating packages for $arch architecture"
+          
+          # 复制 MSI 安装包（如果存在）
+          $msiFiles = Get-ChildItem -Path "src-tauri/target/$target/release/bundle" -Filter "*.msi" -Recurse -ErrorAction SilentlyContinue
+          foreach ($msi in $msiFiles) {
+              $newName = "Miaoda-v$version-$arch.msi"
+              Copy-Item $msi.FullName -Destination "$distDir/$arch/$newName"
+              Write-Host "Created MSI: $newName"
+          }
+          
+          # 复制 NSIS 安装包（如果存在）
+          $exeFiles = Get-ChildItem -Path "src-tauri/target/$target/release/bundle" -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue
+          foreach ($exe in $exeFiles) {
+              $newName = "Miaoda-v$version-$arch-setup.exe"
+              Copy-Item $exe.FullName -Destination "$distDir/$arch/$newName"
+              Write-Host "Created Setup: $newName"
+          }
+          
+          # 创建便携版
+          $portableDir = "$distDir/portable/Miaoda-$arch"
+          New-Item -ItemType Directory -Force -Path $portableDir
+          
+          # 复制主程序
+          $exePath = "src-tauri/target/$target/release/miaoda.exe"
+          if (Test-Path $exePath) {
+              Copy-Item $exePath -Destination "$portableDir/Miaoda.exe"
+              Write-Host "Copied main executable for portable version"
+          }
+          
+          # 创建启动脚本
+          @"
+          @echo off
+          chcp 65001 > nul
+          cd /d "%~dp0"
+          echo Starting Miaoda...
+          start "" Miaoda.exe
+          "@ | Out-File -FilePath "$portableDir/启动.bat" -Encoding ASCII
+          
+          @"
+          @echo off
+          chcp 65001 > nul
+          cd /d "%~dp0"
+          echo Starting Miaoda...
+          start "" Miaoda.exe
+          "@ | Out-File -FilePath "$portableDir/Start.bat" -Encoding ASCII
+          
+          # 创建说明文件
+          @"
+          Miaoda Windows Portable v$version
+          ===================================
+          
+          系统要求 / System Requirements:
+          - Windows 7 SP1 / 8 / 10 / 11
+          - 架构 / Architecture: $arch
+          - WebView2 Runtime (自动安装 / Auto-installed)
+          
+          使用说明 / Usage:
+          1. 双击 Miaoda.exe 或 启动.bat 启动应用
+             Double-click Miaoda.exe or Start.bat to launch
+          2. 本版本为便携版，无需安装
+             This is a portable version, no installation required
+          3. 所有文件请保持在同一目录下
+             Keep all files in the same directory
+          
+          构建信息 / Build Info:
+          - 版本 / Version: $version
+          - 架构 / Architecture: $arch ($target)
+          - 构建时间 / Build Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+          - 兼容性 / Compatibility: Windows 7+
+          
+          更多信息 / More Info: https://github.com/miounet11/miaodanew
+          "@ | Out-File -FilePath "$portableDir/README.txt" -Encoding UTF8
+          
+          # 创建 ZIP 压缩包
+          Compress-Archive -Path $portableDir -DestinationPath "$distDir/portable/Miaoda-v$version-Windows-$arch-Portable.zip"
+          Remove-Item -Recurse -Force $portableDir
+          Write-Host "Created portable ZIP package"
+          
+          # 显示构建结果
+          Write-Host "`nBuild results for $arch architecture:"
+          Get-ChildItem -Path $distDir -Recurse -File | ForEach-Object {
+              $size = [math]::Round($_.Length / 1MB, 2)
+              Write-Host "  $($_.Name): $size MB"
+          }
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: miaoda-windows-${{ matrix.arch }}-${{ github.event.inputs.version }}
+          path: dist/windows-packages/**/*
+          retention-days: 30
+
+  create-release-summary:
+    needs: build-windows-packages
+    if: always() && needs.build-windows-packages.result == 'success'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Create release summary
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          
+          cat > RELEASE_NOTES.md << EOF
+          # Miaoda Windows 发行版 v$VERSION
+          
+          ## 📦 安装包说明
+          
+          ### 🖥️ 标准安装包 (推荐)
+          - **Miaoda-v$VERSION-x64-setup.exe** - 64位安装程序
+          - **Miaoda-v$VERSION-x86-setup.exe** - 32位安装程序  
+          
+          ### 📦 MSI 安装包 (企业部署)
+          - **Miaoda-v$VERSION-x64.msi** - 64位 MSI 包
+          - **Miaoda-v$VERSION-x86.msi** - 32位 MSI 包
+          
+          ### 📁 便携版 (绿色版)
+          - **Miaoda-v$VERSION-Windows-x64-Portable.zip** - 64位便携版
+          - **Miaoda-v$VERSION-Windows-x86-Portable.zip** - 32位便携版
+          
+          ## 🎯 系统兼容性
+          
+          ✅ **Windows 7 SP1** 及以上版本  
+          ✅ **32位和64位** 系统完全支持  
+          ✅ **WebView2** 运行时自动安装  
+          ✅ **中英文界面** 支持  
+          
+          ## 🚀 安装方式选择
+          
+          | 用户类型 | 推荐安装包 | 说明 |
+          |---------|-----------|------|
+          | **普通用户** | setup.exe | 自动安装，集成系统 |
+          | **企业用户** | .msi 文件 | 支持静默安装和组策略 |  
+          | **便携使用** | Portable.zip | 绿色版，无需安装 |
+          | **开发测试** | Portable.zip | 快速测试，不影响系统 |
+          
+          ## 📋 版本特性
+          
+          - **版本号**: $VERSION
+          - **构建时间**: $(date '+%Y-%m-%d %H:%M:%S')
+          - **支持架构**: x64, x86
+          - **最低要求**: Windows 7 SP1
+          - **安装方式**: 标准安装、MSI、便携版
+          
+          ## 🔗 下载和支持
+          
+          - **下载地址**: [GitHub Actions Artifacts](https://github.com/miounet11/miaodanew/actions)
+          - **问题反馈**: https://github.com/miounet11/miaodanew/issues
+          - **使用文档**: https://github.com/miounet11/miaodanew
+          EOF
+          
+          echo "Release notes created successfully!"
+          cat RELEASE_NOTES.md
+      
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes-${{ github.event.inputs.version }}
+          path: RELEASE_NOTES.md
+          retention-days: 90
