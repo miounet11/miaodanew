@@ -96,8 +96,8 @@ jobs:
           # 更新 tauri.conf.json
           jq --arg version "$VERSION" '.version = $version' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
           
-          # 更新 Cargo.toml
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+          # 更新 Cargo.toml（只更新 package 部分的版本）
+          sed -i "0,/^version = \".*\"/s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
           
           echo "Updated version to $VERSION"
 
