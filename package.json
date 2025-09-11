@@ -1,16 +1,11 @@
 {
   "name": "miaoda",
   "private": true,
-  "workspaces": {
-    "packages": [
-      "core",
-      "web-app",
-      "extensions-web"
-    ],
-    "nohoist": [
-      "**/@miaoda/**"
-    ]
-  },
+  "workspaces": [
+    "core",
+    "web-app", 
+    "extensions-web"
+  ],
   "scripts": {
     "lint": "yarn workspace @miaoda/web-app lint",
     "dev": "yarn dev:tauri",
@@ -20,25 +15,20 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:prepare": "yarn build:icon && yarn copy:assets:tauri && yarn build --no-bundle ",
-    
     "dev:web": "yarn workspace @miaoda/web-app dev",
     "dev:web-app": "yarn build:extensions-web && yarn workspace @miaoda/web-app install && yarn workspace @miaoda/web-app dev:web",
     "dev:tauri": "yarn build:icon && yarn copy:assets:tauri && cross-env IS_CLEAN=true tauri dev",
-    
     "build:web-app": "yarn build:extensions-web && yarn workspace @miaoda/web-app install && yarn workspace @miaoda/web-app build:web",
     "serve:web-app": "yarn workspace @miaoda/web-app serve:web",
     "build:serve:web-app": "yarn build:web-app && yarn serve:web-app",
-    
     "copy:assets:tauri": "cpx \"pre-install/*.tgz\" \"src-tauri/resources/pre-install/\" && cpx \"LICENSE\" \"src-tauri/resources/\"",
     "download:lib": "node ./scripts/download-lib.mjs",
     "download:bin": "node ./scripts/download-bin.mjs",
-    
     "build:tauri:win32": "yarn download:bin && yarn tauri build",
     "build:tauri:linux": "yarn download:bin && NO_STRIP=1 ./src-tauri/build-utils/shim-linuxdeploy.sh yarn tauri build --verbose && ./src-tauri/build-utils/buildAppImage.sh",
     "build:tauri:darwin": "yarn tauri build --target aarch64-apple-darwin",
     "build:tauri": "yarn build:icon && yarn copy:assets:tauri && run-script-os",
     "build:tauri:plugin:api": "cd src-tauri/plugins && yarn install && yarn workspaces foreach -Apt run build",
-    
     "build:icon": "tauri icon ./src-tauri/icons/icon.png",
     "build:core": "cd core && yarn build && yarn pack",
     "build:web": "yarn workspace @miaoda/web-app build",
@@ -65,12 +55,23 @@
   },
   "version": "0.0.0",
   "installConfig": {
-    "hoistingLimits": "workspaces"
+    "hoistingLimits": "workspaces",
+    "selfReferences": false
   },
   "resolutions": {
-    "yallist": "4.0.0"
+    "yallist": "4.0.0",
+    "@tauri-apps/cli": "2.7.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.0",
+    "vitest": "^3.1.3",
+    "rollup": "^4.0.0",
+    "esbuild": "^0.24.0"
   },
   "packageManager": "yarn@4.5.3",
+  "engines": {
+    "node": ">=20.18.0",
+    "yarn": ">=4.5.0"
+  },
   "dependencies": {
     "@radix-ui/react-tabs": "^1.1.13",
     "@tanstack/react-virtual": "^3.13.12",

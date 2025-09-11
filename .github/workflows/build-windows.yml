@@ -41,39 +41,112 @@ jobs:
         with:
           submodules: recursive
 
-      # 2. 设置 Node.js
+      # 2. 设置 Node.js (使用.nvmrc指定的版本)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
 
-      # 2.5 启用 Corepack 和 Yarn
+      # 2.5 启用 Corepack 和 Yarn (锁定版本)
       - name: Enable Corepack
         run: |
           corepack enable
-          corepack prepare yarn@stable --activate
+          corepack prepare yarn@4.5.3 --activate
 
-      # 2.6 安装 jq（用于处理 JSON）
-      - name: Install jq
+      # 2.6 安装 Windows 构建工具
+      - name: Install Windows build tools
         run: |
+          # 安装 jq（用于处理 JSON）
           choco install jq -y
+          
+          # 验证工具安装
+          jq --version
 
-      # 3. 设置 Rust
+      # 3. 设置 Rust (使用rust-toolchain.toml指定的版本)
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: 1.77.2
           targets: x86_64-pc-windows-msvc
+          components: rustfmt, clippy
+
+      # 3.5 安装 Rust 构建工具（在 Rust 设置后）
+      - name: Install Rust build tools  
+        run: |
+          # 检查缓存是否存在 ctoml，不存在则安装
+          if (!(Test-Path "$env:USERPROFILE\.cargo\bin\ctoml.exe")) {
+            cargo install ctoml --version 0.1.0
+          }
+          
+          # 验证安装
+          if (Test-Path "$env:USERPROFILE\.cargo\bin\ctoml.exe") {
+            Write-Output "ctoml already installed"
+          }
+        shell: powershell
+
+      # 3.6 安装 .NET 构建工具
+      - name: Install .NET build tools
+        run: |
+          # 检查缓存是否存在 AzureSignTool，不存在则安装  
+          if (!(Get-Command AzureSignTool -ErrorAction SilentlyContinue)) {
+            dotnet tool install --global AzureSignTool --version 4.0.1
+          } else {
+            Write-Output "AzureSignTool already installed"
+          }
+          
+          # 验证安装
+          try {
+            AzureSignTool --help | Out-Null
+            Write-Output "AzureSignTool verified"
+          } catch {
+            Write-Output "AzureSignTool installation failed"
+          }
+        shell: powershell
 
       # 4. 安装 Rust 缓存
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
+          cache-on-failure: true
+          cache-all-crates: true
+
+      # 4.5 安装 Yarn 缓存
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache yarn dependencies
+        uses: actions/cache@v3
+        id: yarn-cache
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+            .yarn/cache
+            node_modules
+            */node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      # 4.6 安装工具缓存
+      - name: Cache build tools
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/ctoml
+            ~/.dotnet/tools
+          key: ${{ runner.os }}-build-tools-v1
+          restore-keys: |
+            ${{ runner.os }}-build-tools-
 
       # 5. 安装前端依赖
       - name: Install frontend dependencies
         run: |
-          yarn install --network-timeout 600000
+          yarn install --immutable
+        env:
+          YARN_HTTP_TIMEOUT: 600000
 
       # 6. 获取版本号
       - name: Get version
