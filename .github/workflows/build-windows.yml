@@ -237,18 +237,19 @@ jobs:
           sed -i "s/jan_build/$BUILD_VERSION/g" src-tauri/tauri.bundle.windows.nsis.template
           
           # 替换路径环境变量占位符（使用Windows格式的路径）
-          # 获取当前工作目录并转换为Windows路径格式
-          CURRENT_DIR=$(pwd | sed 's#/#\\#g')
+          # 获取当前工作目录并转换为Windows路径格式（使用双反斜杠避免sed转义问题）
+          CURRENT_DIR=$(pwd | sed 's#/#\\\\#g')
           
-          sed -i "s|\${INSTALLERICON}|${CURRENT_DIR}\\src-tauri\\icons\\icon.ico|g" src-tauri/tauri.bundle.windows.nsis.template
-          sed -i "s|\${MAINBINARYSRCPATH}|${CURRENT_DIR}\\src-tauri\\target\\release\\miaoda.exe|g" src-tauri/tauri.bundle.windows.nsis.template
-          sed -i "s|\${ADDITIONALPLUGINSPATH}|${CURRENT_DIR}\\src-tauri\\target\\release\\nsis\\x64\\Plugins\\x86-unicode\\additional|g" src-tauri/tauri.bundle.windows.nsis.template
-          sed -i "s|\${NSISENGLISHPATH}|${CURRENT_DIR}\\src-tauri\\target\\release\\nsis\\x64\\English.nsh|g" src-tauri/tauri.bundle.windows.nsis.template
-          sed -i "s|\${VULKANLIBPATH}|${CURRENT_DIR}\\src-tauri\\resources\\lib\\vulkan-1.dll|g" src-tauri/tauri.bundle.windows.nsis.template
-          sed -i "s|\${LICENSEPATH}|${CURRENT_DIR}\\src-tauri\\resources\\LICENSE|g" src-tauri/tauri.bundle.windows.nsis.template
-          sed -i "s|\${PREINSTALLPATH}|${CURRENT_DIR}\\src-tauri\\resources\\pre-install\\|g" src-tauri/tauri.bundle.windows.nsis.template
-          sed -i "s|\${BUNEXEPATH}|${CURRENT_DIR}\\src-tauri\\resources\\bin\\bun-x86_64-pc-windows-msvc.exe|g" src-tauri/tauri.bundle.windows.nsis.template
-          sed -i "s|\${UVEXEPATH}|${CURRENT_DIR}\\src-tauri\\resources\\bin\\uv-x86_64-pc-windows-msvc.exe|g" src-tauri/tauri.bundle.windows.nsis.template
+          # 使用不同的分隔符避免路径中的反斜杠问题
+          sed -i "s|\${INSTALLERICON}|${CURRENT_DIR}\\\\src-tauri\\\\icons\\\\icon.ico|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${MAINBINARYSRCPATH}|${CURRENT_DIR}\\\\src-tauri\\\\target\\\\release\\\\miaoda.exe|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${ADDITIONALPLUGINSPATH}|${CURRENT_DIR}\\\\src-tauri\\\\target\\\\release\\\\nsis\\\\x64\\\\Plugins\\\\x86-unicode\\\\additional|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${NSISENGLISHPATH}|${CURRENT_DIR}\\\\src-tauri\\\\target\\\\release\\\\nsis\\\\x64\\\\English.nsh|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${VULKANLIBPATH}|${CURRENT_DIR}\\\\src-tauri\\\\resources\\\\lib\\\\vulkan-1.dll|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${LICENSEPATH}|${CURRENT_DIR}\\\\src-tauri\\\\resources\\\\LICENSE|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${PREINSTALLPATH}|${CURRENT_DIR}\\\\src-tauri\\\\resources\\\\pre-install\\\\|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${BUNEXEPATH}|${CURRENT_DIR}\\\\src-tauri\\\\resources\\\\bin\\\\bun-x86_64-pc-windows-msvc.exe|g" src-tauri/tauri.bundle.windows.nsis.template
+          sed -i "s|\${UVEXEPATH}|${CURRENT_DIR}\\\\src-tauri\\\\resources\\\\bin\\\\uv-x86_64-pc-windows-msvc.exe|g" src-tauri/tauri.bundle.windows.nsis.template
           
           echo "Updated version to $VERSION and configured NSIS template"
 
