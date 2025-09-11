@@ -101,10 +101,11 @@ jobs:
           
           echo "Updated version to $VERSION"
 
-      # 8. 构建 core 模块
-      - name: Build core modules
+      # 8. 构建依赖模块
+      - name: Build dependency modules
         run: |
           yarn build:core
+          yarn build:extensions-web
           
       # 9. 构建 Tauri 应用
       - name: Build Tauri app
