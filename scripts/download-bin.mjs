@@ -113,7 +113,7 @@ async function main() {
   const bunSaveDir = path.join(tempBinDir, `bun-${bunPlatform}.zip`)
   if (!fs.existsSync(bunSaveDir)) {
     await download(bunUrl, bunSaveDir)
-    await decompress(bunPath, tempBinDir)
+    await decompress(bunSaveDir, tempBinDir)
   }
   try {
     copySync(
@@ -173,7 +173,7 @@ async function main() {
   const uvSaveDir = path.join(tempBinDir, `uv-${uvPlatform}.${uvExt}`)
   if (!fs.existsSync(uvSaveDir)) {
     await download(uvUrl, uvSaveDir)
-    await decompress(uvPath, tempBinDir)
+    await decompress(uvSaveDir, tempBinDir)
   }
   try {
     copySync(
