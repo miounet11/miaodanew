@@ -1,5 +1,13 @@
+# 环境配置文件保护
 .env
+.env.local
+.env.*.local
 error.log
+
+# 配置报告（可能包含敏感信息）
+config-report.json
+config-*.json
+config-*.yaml
 node_modules
 *.tgz
 !src-tauri/resources/pre-install/*.tgz

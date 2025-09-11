@@ -1,4 +1,4 @@
-name: Build Windows Release (Performance Optimized)
+name: Build Windows Release
 
 # 触发条件
 on:
@@ -29,21 +29,6 @@ on:
       - 'web-app/**'
       - 'core/**'
       - '.github/workflows/build-windows.yml'
-
-# 全局环境变量
-env:
-  CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
-  # 启用 sccache
-  SCCACHE_GHA_ENABLED: "true"
-  RUSTC_WRAPPER: "sccache"
-  # Cargo 优化
-  CARGO_NET_RETRY: 3
-  CARGO_HTTP_TIMEOUT: 300
-  CARGO_HTTP_MULTIPLEXING: true
-  # 并行构建
-  CARGO_BUILD_JOBS: 0
-  MAKEFLAGS: "-j$(nproc)"
 
 jobs:
   build-windows:
@@ -86,12 +71,6 @@ jobs:
           targets: x86_64-pc-windows-msvc
           components: rustfmt, clippy
 
-      # 3.1 安装 sccache（Rust 编译缓存）
-      - name: Install sccache
-        uses: mozilla-actions/sccache-action@v0.0.8
-        with:
-          version: "v0.9.0"
-
       # 3.5 安装 Rust 构建工具（在 Rust 设置后）
       - name: Install Rust build tools  
         run: |
@@ -125,75 +104,49 @@ jobs:
           }
         shell: powershell
 
-      # 4. 增强的缓存策略
-      # 4.1 Rust 缓存（增强版）
-      - name: Rust cache (Enhanced)
+      # 4. 安装 Rust 缓存
+      - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
           cache-on-failure: true
           cache-all-crates: true
-          # 缓存密钥包含更多信息
-          key: v2-${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
-          # 启用共享缓存
-          shared-key: v2-${{ runner.os }}-rust-shared
-          # 缓存环境变量
-          env-vars: CARGO_BUILD_JOBS RUSTC_WRAPPER
-          
-      # 4.2 增强的 Yarn 缓存
-      - name: Enhanced Yarn cache
-        uses: actions/cache@v4
+
+      # 4.5 安装 Yarn 缓存
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache yarn dependencies
+        uses: actions/cache@v3
         id: yarn-cache
         with:
           path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
             .yarn/cache
-            .yarn/install-state.gz
             node_modules
             */node_modules
-            ~/.cache/yarn
-          key: v2-${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock', '**/package.json') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            v2-${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-            v2-${{ runner.os }}-yarn-
+            ${{ runner.os }}-yarn-
 
-      # 4.3 构建工具缓存
+      # 4.6 安装工具缓存
       - name: Cache build tools
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           path: |
-            ~/.cargo/bin/ctoml*
-            ~/.cargo/bin/sccache*
+            ~/.cargo/bin/ctoml
             ~/.dotnet/tools
-            ~/.local/share/applications
-          key: v2-${{ runner.os }}-build-tools-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-build-tools-v1
           restore-keys: |
-            v2-${{ runner.os }}-build-tools-
+            ${{ runner.os }}-build-tools-
 
-      # 4.4 前端构建缓存
-      - name: Cache Vite build
-        uses: actions/cache@v4
-        with:
-          path: |
-            web-app/node_modules/.vite
-            web-app/dist
-            core/dist
-            extensions-web/dist
-          key: v2-${{ runner.os }}-vite-${{ hashFiles('**/package.json', '**/vite.config.*') }}
-          restore-keys: |
-            v2-${{ runner.os }}-vite-
-
-      # 5. 并行依赖安装
-      - name: Install dependencies (Parallel)
+      # 5. 安装前端依赖
+      - name: Install frontend dependencies
         run: |
-          # 设置 Yarn 并行安装
-          yarn config set networkConcurrency 16
-          yarn config set httpTimeout 600000
-          
-          # 安装依赖
-          yarn install --immutable --inline-builds
+          yarn install --immutable
         env:
           YARN_HTTP_TIMEOUT: 600000
-          YARN_NETWORK_CONCURRENCY: 16
 
       # 6. 获取版本号
       - name: Get version
@@ -257,57 +210,18 @@ jobs:
           sed -i "s|\${UVEXEPATH}|${CURRENT_DIR}\\src-tauri\\resources\\bin\\uv-x86_64-pc-windows-msvc.exe|g" src-tauri/tauri.bundle.windows.nsis.template
           
           echo "Updated version to $VERSION and configured NSIS template"
+          
+          # 调试：显示NSIS模板的关键部分
+          echo "=== NSIS Template Configuration ==="
+          head -n 50 src-tauri/tauri.bundle.windows.nsis.template | tail -n 20
 
-      # 8. 并行构建应用（性能优化的核心）
-      - name: Parallel build (Performance Optimized)
+      # 8. 构建应用
+      - name: Build app
         run: |
-          # 启用构建时间统计
-          $start_time = Get-Date
-          
-          # 设置环境变量以优化构建
-          $env:CARGO_BUILD_JOBS = "0"  # 使用所有 CPU 核心
-          $env:CARGO_TARGET_DIR = "./src-tauri/target"
-          
-          # 并行执行前端构建
-          Write-Output "=== 开始并行构建 ==="
-          
-          # 阶段1：核心模块和扩展构建（可以并行）
-          Write-Output "阶段1：构建核心模块和扩展..."
-          Start-Process powershell -ArgumentList "-Command", "yarn build:core; Write-Output 'Core build completed'" -NoNewWindow -PassThru | Out-Null
-          Start-Process powershell -ArgumentList "-Command", "yarn build:extensions-web; Write-Output 'Extensions-web build completed'" -NoNewWindow -PassThru | Out-Null
-          
-          # 等待核心构建完成
-          do {
-            Start-Sleep -Seconds 2
-            Write-Output "等待核心模块构建完成..."
-          } while (-not (Test-Path "core/dist" -PathType Container) -or -not (Test-Path "extensions-web/dist" -PathType Container))
-          
-          Write-Output "阶段1完成：核心模块和扩展构建完成"
-          
-          # 阶段2：Web应用构建
-          Write-Output "阶段2：构建Web应用..."
+          yarn build:core
+          yarn build:extensions-web
           yarn build:web
-          Write-Output "阶段2完成：Web应用构建完成"
-          
-          # 阶段3：Tauri构建（使用优化配置）
-          Write-Output "阶段3：构建Tauri应用..."
-          # 设置 Rust 编译优化
-          $env:RUSTFLAGS = "-C target-cpu=native -C opt-level=3"
           yarn build:tauri:win32
-          Write-Output "阶段3完成：Tauri应用构建完成"
-          
-          # 计算构建时间
-          $end_time = Get-Date
-          $build_duration = $end_time - $start_time
-          Write-Output "=== 构建完成 ==="
-          Write-Output "总构建时间: $($build_duration.TotalMinutes.ToString('F2')) 分钟"
-          
-          # 显示缓存统计
-          if (Get-Command sccache -ErrorAction SilentlyContinue) {
-            Write-Output "=== sccache 统计 ==="
-            sccache --show-stats
-          }
-        shell: powershell
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -362,12 +276,6 @@ jobs:
             ### Windows 安装包
             - `Miaoda_${{ steps.get_version.outputs.VERSION }}_x64-setup.exe` - Windows 64位安装程序
             
-            ### 构建性能优化
-            - ✅ Rust 编译缓存 (sccache)
-            - ✅ 并行构建流水线
-            - ✅ 增强的依赖缓存策略
-            - ✅ 前端构建优化
-            
             ### 更新内容
             - 修复底部图标透明度问题
             - 修复左边栏隐藏时的交互冲突
@@ -378,28 +286,10 @@ jobs:
             2. 双击运行安装程序
             3. 按照安装向导完成安装
 
-      # 12. 构建报告和统计
-      - name: Build Performance Report
+      # 12. 输出下载链接
+      - name: Output download URL
         if: always()
         run: |
-          Write-Output "=== 构建性能报告 ==="
-          Write-Output "构建已完成！"
-          
-          # 显示文件大小
-          if (Test-Path "release") {
-            Write-Output "`n=== 输出文件大小 ==="
-            Get-ChildItem -Path "release" -File | ForEach-Object {
-              $size = [math]::Round($_.Length / 1MB, 2)
-              Write-Output "$($_.Name): $size MB"
-            }
-          }
-          
-          # 显示最终的 sccache 统计
-          if (Get-Command sccache -ErrorAction SilentlyContinue) {
-            Write-Output "`n=== 最终缓存统计 ==="
-            sccache --show-stats
-          }
-          
-          Write-Output "`n=== 下载链接 ==="
-          Write-Output "Artifacts: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        shell: powershell
+          echo "Build completed successfully!"
+          echo "Artifacts can be downloaded from the Actions tab"
+          echo "Direct link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

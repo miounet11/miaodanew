@@ -3,18 +3,25 @@
   "private": true,
   "workspaces": [
     "core",
-    "web-app", 
+    "web-app",
     "extensions-web"
   ],
   "scripts": {
     "lint": "yarn workspace @miaoda/web-app lint",
-    "dev": "yarn dev:tauri",
-    "build": "yarn build:web && yarn build:tauri",
-    "test": "vitest run",
+    "dev": "yarn config:validate && yarn dev:tauri",
+    "build": "yarn config:validate && yarn build:web && yarn build:tauri",
+    "test": "yarn config:validate test && vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:prepare": "yarn build:icon && yarn copy:assets:tauri && yarn build --no-bundle ",
+    "config:load": "node ./scripts/config-manager.mjs load",
+    "config:validate": "node ./scripts/validate-config.mjs",
+    "config:validate:files": "node ./scripts/validate-config.mjs files",
+    "config:validate:env": "node ./scripts/validate-config.mjs environments",
+    "config:report": "node ./scripts/validate-config.mjs report",
+    "config:export": "node ./scripts/config-manager.mjs export",
+    "config:get": "node ./scripts/config-manager.mjs get",
     "dev:web": "yarn workspace @miaoda/web-app dev",
     "dev:web-app": "yarn build:extensions-web && yarn workspace @miaoda/web-app install && yarn workspace @miaoda/web-app dev:web",
     "dev:tauri": "yarn build:icon && yarn copy:assets:tauri && cross-env IS_CLEAN=true tauri dev",
@@ -76,6 +83,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@tanstack/react-virtual": "^3.13.12",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "dotenv": "^17.2.2",
     "download-cli": "^1.1.1",
     "react-syntax-highlighter": "^15.6.6"
   }

@@ -11,6 +11,12 @@ export * from './types'
 export * from './browser'
 
 /**
+ * Export config module
+ * @module
+ */
+export * from './config'
+
+/**
  * Declare global object
  */
 declare global {
