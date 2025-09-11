@@ -9,7 +9,7 @@ use rmcp::{
 use serde_json::Value;
 use std::{collections::HashMap, env, process::Stdio, sync::Arc, time::Duration};
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
-use reqwest;
+use tauri_plugin_http;
 use tokio::{
     io::AsyncReadExt,
     process::Command,
@@ -490,10 +490,10 @@ async fn schedule_mcp_start_task<R: Runtime>(
 
     if config_params.transport_type.as_deref() == Some("http") && config_params.url.is_some() {
         let transport = StreamableHttpClientTransport::with_client(
-            reqwest::Client::builder()
+            tauri_plugin_http::reqwest::Client::builder()
                 .default_headers({
                     // Map envs to request headers
-                    let mut headers = reqwest::header::HeaderMap::new();
+                    let mut headers = tauri_plugin_http::reqwest::header::HeaderMap::new();
                     for (key, value) in config_params.headers.iter() {
                         // Convert JSON value to string for header value
                         let v_str = match value {
@@ -505,8 +505,8 @@ async fn schedule_mcp_start_task<R: Runtime>(
 
                         // Try to map env keys to HTTP header names (case-insensitive)
                         // Most HTTP headers are Title-Case, so we try to convert
-                        if let Ok(header_name) = reqwest::header::HeaderName::from_bytes(key.as_bytes()) {
-                            if let Ok(header_value) = reqwest::header::HeaderValue::from_str(&v_str) {
+                        if let Ok(header_name) = tauri_plugin_http::reqwest::header::HeaderName::from_bytes(key.as_bytes()) {
+                            if let Ok(header_value) = tauri_plugin_http::reqwest::header::HeaderValue::from_str(&v_str) {
                                 headers.insert(header_name, header_value);
                             }
                         }
@@ -558,10 +558,10 @@ async fn schedule_mcp_start_task<R: Runtime>(
     } else if config_params.transport_type.as_deref() == Some("sse") && config_params.url.is_some()
     {
         let transport = SseClientTransport::start_with_client(
-            reqwest::Client::builder()
+            tauri_plugin_http::reqwest::Client::builder()
                 .default_headers({
                     // Map envs to request headers
-                    let mut headers = reqwest::header::HeaderMap::new();
+                    let mut headers = tauri_plugin_http::reqwest::header::HeaderMap::new();
                     for (key, value) in config_params.headers.iter() {
                         // Convert JSON value to string for header value
                         let v_str = match value {
@@ -573,8 +573,8 @@ async fn schedule_mcp_start_task<R: Runtime>(
 
                         // Try to map env keys to HTTP header names (case-insensitive)
                         // Most HTTP headers are Title-Case, so we try to convert
-                        if let Ok(header_name) = reqwest::header::HeaderName::from_bytes(key.as_bytes()) {
-                            if let Ok(header_value) = reqwest::header::HeaderValue::from_str(&v_str) {
+                        if let Ok(header_name) = tauri_plugin_http::reqwest::header::HeaderName::from_bytes(key.as_bytes()) {
+                            if let Ok(header_value) = tauri_plugin_http::reqwest::header::HeaderValue::from_str(&v_str) {
                                 headers.insert(header_name, header_value);
                             }
                         }
