@@ -495,17 +495,19 @@ async fn schedule_mcp_start_task<R: Runtime>(
                     // Map envs to request headers
                     let mut headers = reqwest::header::HeaderMap::new();
                     for (key, value) in config_params.headers.iter() {
-                        if let Some(v_str) = value.as_str() {
-                            // Try to map env keys to HTTP header names (case-insensitive)
-                            // Most HTTP headers are Title-Case, so we try to convert
-                            let header_name =
-                                reqwest::header::HeaderName::from_bytes(key.as_bytes());
-                            if let Ok(header_name) = header_name {
-                                if let Ok(header_value) =
-                                    reqwest::header::HeaderValue::from_str(v_str)
-                                {
-                                    headers.insert(header_name, header_value);
-                                }
+                        // Convert JSON value to string for header value
+                        let v_str = match value {
+                            Value::String(s) => s.clone(),
+                            Value::Number(n) => n.to_string(),
+                            Value::Bool(b) => b.to_string(),
+                            _ => continue, // Skip non-primitive values
+                        };
+
+                        // Try to map env keys to HTTP header names (case-insensitive)
+                        // Most HTTP headers are Title-Case, so we try to convert
+                        if let Ok(header_name) = reqwest::header::HeaderName::from_bytes(key.as_bytes()) {
+                            if let Ok(header_value) = reqwest::header::HeaderValue::from_str(&v_str) {
+                                headers.insert(header_name, header_value);
                             }
                         }
                     }
@@ -561,17 +563,19 @@ async fn schedule_mcp_start_task<R: Runtime>(
                     // Map envs to request headers
                     let mut headers = reqwest::header::HeaderMap::new();
                     for (key, value) in config_params.headers.iter() {
-                        if let Some(v_str) = value.as_str() {
-                            // Try to map env keys to HTTP header names (case-insensitive)
-                            // Most HTTP headers are Title-Case, so we try to convert
-                            let header_name =
-                                reqwest::header::HeaderName::from_bytes(key.as_bytes());
-                            if let Ok(header_name) = header_name {
-                                if let Ok(header_value) =
-                                    reqwest::header::HeaderValue::from_str(v_str)
-                                {
-                                    headers.insert(header_name, header_value);
-                                }
+                        // Convert JSON value to string for header value
+                        let v_str = match value {
+                            Value::String(s) => s.clone(),
+                            Value::Number(n) => n.to_string(),
+                            Value::Bool(b) => b.to_string(),
+                            _ => continue, // Skip non-primitive values
+                        };
+
+                        // Try to map env keys to HTTP header names (case-insensitive)
+                        // Most HTTP headers are Title-Case, so we try to convert
+                        if let Ok(header_name) = reqwest::header::HeaderName::from_bytes(key.as_bytes()) {
+                            if let Ok(header_value) = reqwest::header::HeaderValue::from_str(&v_str) {
+                                headers.insert(header_name, header_value);
                             }
                         }
                     }
