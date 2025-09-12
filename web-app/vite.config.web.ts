@@ -5,6 +5,7 @@ import path from 'path'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 
 export default defineConfig({
+  base: './', // 添加相对路径基础配置
   plugins: [
     TanStackRouterVite({
       target: 'react',
@@ -18,23 +19,13 @@ export default defineConfig({
     outDir: './dist-web',
     emptyOutDir: true,
     rollupOptions: {
-      external: [
-        // Exclude Tauri packages from web bundle
-        '@tauri-apps/api',
-        '@tauri-apps/plugin-http',
-        '@tauri-apps/plugin-fs',
-        '@tauri-apps/plugin-shell',
-        '@tauri-apps/plugin-clipboard-manager',
-        '@tauri-apps/plugin-dialog',
-        '@tauri-apps/plugin-os',
-        '@tauri-apps/plugin-process',
-        '@tauri-apps/plugin-updater',
-        '@tauri-apps/plugin-deep-link',
-        '@tauri-apps/api/event',
-        '@tauri-apps/api/path',
-        '@tauri-apps/api/window',
-        '@tauri-apps/api/webviewWindow',
-      ],
+      output: {
+        // 确保资源文件使用相对路径
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+      },
+      // 移除 external 配置，让 Tauri API 被正确打包
     },
     target: 'esnext',
   },
@@ -44,21 +35,21 @@ export default defineConfig({
     },
   },
   define: {
-    IS_TAURI: JSON.stringify(process.env.IS_TAURI),
-    // Platform detection constants for web version
-    IS_WEB_APP: JSON.stringify(true),
-    // Disable auto-updater on web (not applicable)
+    IS_TAURI: JSON.stringify(true), // Tauri 环境构建
+    // Platform detection constants for Tauri build
+    IS_WEB_APP: JSON.stringify(false),
+    // Disable auto-updater temporarily
     AUTO_UPDATER_DISABLED: JSON.stringify(true),
-    IS_MACOS: JSON.stringify(false),
-    IS_WINDOWS: JSON.stringify(false),
-    IS_LINUX: JSON.stringify(false),
+    IS_MACOS: JSON.stringify(process.env.TAURI_ENV_PLATFORM?.includes('darwin') ?? false),
+    IS_WINDOWS: JSON.stringify(process.env.TAURI_ENV_PLATFORM?.includes('windows') ?? false),
+    IS_LINUX: JSON.stringify(process.env.TAURI_ENV_PLATFORM?.includes('linux') ?? false),
     IS_IOS: JSON.stringify(false),
     IS_ANDROID: JSON.stringify(false),
-    PLATFORM: JSON.stringify('web'),
-    VERSION: JSON.stringify(process.env.npm_package_version || '1.0.0'),
+    PLATFORM: JSON.stringify(process.env.TAURI_ENV_PLATFORM || 'unknown'),
+    VERSION: JSON.stringify(process.env.npm_package_version || '3.0.1'),
     POSTHOG_KEY: JSON.stringify(process.env.POSTHOG_KEY || ''),
-    POSTHOG_HOST: JSON.stringify(process.env.POSTHOG_HOST || ''),
-    MODEL_CATALOG_URL: JSON.stringify(process.env.MODEL_CATALOG_URL || ''),
+    POSTHOG_HOST: JSON.stringify(process.env.POSTHOG_HOST || 'https://app.posthog.com'),
+    MODEL_CATALOG_URL: JSON.stringify('https://raw.githubusercontent.com/miounet11/miaoda/main/model_catalog.json'),
   },
   server: {
     port: 3001,

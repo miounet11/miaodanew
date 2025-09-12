@@ -6,34 +6,17 @@ import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import packageJson from './package.json'
 
-// 导入配置管理器
+// 简化的配置加载器，直接使用环境变量
 const loadProjectConfig = async (mode: string) => {
-  // 动态导入配置管理器（避免构建时依赖问题）
-  try {
-    const ConfigManager = (await import('../scripts/config-manager.mjs')).default
-    const manager = new ConfigManager()
-    await manager.loadConfig(mode)
-    const validation = manager.validateConfig()
-    
-    if (!validation.isValid) {
-      console.warn('⚠️  配置验证失败，使用默认值')
-      validation.errors.forEach(error => console.error(`  ❌ ${error.field}: ${error.message}`))
-    }
-    
-    return {
-      get: (key: string, defaultValue?: any) => manager.get(key, defaultValue)
-    }
-  } catch (error) {
-    console.warn('⚠️  配置管理器加载失败，回退到环境变量:', error.message)
-    const env = loadEnv(mode, process.cwd(), '')
-    return {
-      get: (key: string, defaultValue?: any) => env[key] || process.env[key] || defaultValue
-    }
+  console.warn('⚠️  使用简化配置加载器，直接从环境变量读取配置')
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
+    get: (key: string, defaultValue?: any) => env[key] || process.env[key] || defaultValue
   }
 }
 
 // https://vite.dev/config/
-export default defineConfig(async ({ mode }) => {
+export default defineConfig(async ({ mode }: { mode: string }) => {
   // Load configuration using new config manager
   const config = await loadProjectConfig(mode)
   
@@ -54,6 +37,7 @@ export default defineConfig(async ({ mode }) => {
   console.log(`🚀 [Vite] Bundle Analyzer: ${ENABLE_BUNDLE_ANALYZER ? '启用' : '禁用'}`)
 
   return {
+    base: './', // 确保使用相对路径
     plugins: [
       TanStackRouterVite({
         target: 'react',

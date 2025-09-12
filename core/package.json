@@ -1,6 +1,6 @@
 {
   "name": "@miaoda/core",
-  "version": "0.1.10",
+  "version": "3.0.1",
   "description": "Core library for the Miaoda AI application framework",
   "keywords": [
     "miaoda",

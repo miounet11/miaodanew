@@ -1,6 +1,6 @@
 [package]
 name = "Miaoda"
-version = "0.6.599"
+version = "3.0.1"
 description = "Use offline LLMs with your own data. Run open source models like Llama2 or Falcon on your internal computers/servers with Miaoda."
 authors = ["miaoda <service@miaoda.xin>"]
 license = "MIT"

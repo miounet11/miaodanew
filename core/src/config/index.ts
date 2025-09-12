@@ -496,11 +496,16 @@ export class ConfigManager implements IConfigManager {
             quality: { eslint: true, prettier: true, typeCheck: true }
           },
           external: {
-            updater: { disabled: true }
+            updater: { disabled: true },
+            posthog: { key: '', host: '' },
+            modelCatalogUrl: '',
+            openai: { apiKey: undefined, apiBase: 'https://api.openai.com/v1', model: 'gpt-4' },
+            grok: { apiKey: undefined, apiBase: 'https://api.x.ai/v1', model: 'grok-3' }
           },
           build: {
             sourceMaps: true,
-            chunkSizeLimit: 2000
+            chunkSizeLimit: 2000,
+            bundleAnalyzer: false
           }
         }
 
@@ -513,14 +518,20 @@ export class ConfigManager implements IConfigManager {
             quality: { eslint: true, prettier: false, typeCheck: true }
           },
           external: {
-            updater: { disabled: true }
+            updater: { disabled: true },
+            posthog: { key: '', host: '' },
+            modelCatalogUrl: '',
+            openai: { apiKey: undefined, apiBase: 'https://api.openai.com/v1', model: 'gpt-4' },
+            grok: { apiKey: undefined, apiBase: 'https://api.x.ai/v1', model: 'grok-3' }
           },
           extensions: {
-            mcp: { enabled: false }
+            mcp: { enabled: false, autoInstall: false },
+            llamacpp: { backend: 'auto' as const, threads: 4, gpuLayers: 0 }
           },
           test: {
             enableE2E: true,
-            coverageThreshold: 80
+            coverageThreshold: 80,
+            timeout: 30000
           }
         }
 
@@ -533,11 +544,16 @@ export class ConfigManager implements IConfigManager {
             quality: { eslint: false, prettier: false, typeCheck: false }
           },
           external: {
-            updater: { disabled: false }
+            updater: { disabled: false },
+            posthog: { key: '', host: '' },
+            modelCatalogUrl: '',
+            openai: { apiKey: undefined, apiBase: 'https://api.openai.com/v1', model: 'gpt-4' },
+            grok: { apiKey: undefined, apiBase: 'https://api.x.ai/v1', model: 'grok-3' }
           },
           build: {
             sourceMaps: false,
-            bundleAnalyzer: false
+            bundleAnalyzer: false,
+            chunkSizeLimit: 1000
           },
           monitoring: {
             performance: { enabled: true },

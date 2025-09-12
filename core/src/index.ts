@@ -14,7 +14,8 @@ export * from './browser'
  * Export config module
  * @module
  */
-export * from './config'
+export { ConfigManager } from './config'
+export type { AppConfiguration } from './types/config/appConfigEntity'
 
 /**
  * Declare global object

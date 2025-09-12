@@ -1,6 +1,6 @@
 {
   "name": "@miaoda/extensions-web",
-  "version": "1.0.0",
+  "version": "3.0.1",
   "description": "Web-specific extensions for Miaoda",
   "main": "dist/index.mjs",
   "module": "dist/index.mjs",

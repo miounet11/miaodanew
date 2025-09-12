@@ -1,13 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "miaoda",
-  "version": "0.6.599",
+  "version": "3.0.1",
   "identifier": "miaoda.app",
   "build": {
-    "frontendDist": "../web-app/dist",
+    "frontendDist": "../web-app/dist-web",
     "devUrl": "http://localhost:1420",
-    "beforeDevCommand": "cross-env IS_TAURI=true yarn dev:web",
-    "beforeBuildCommand": ""
+    "beforeDevCommand": "yarn cross-env IS_TAURI=true yarn dev:web",
+    "beforeBuildCommand": "yarn build:web-app"
   },
   "app": {
     "macOSPrivateApi": true,
@@ -77,7 +77,7 @@
   },
   "bundle": {
     "active": true,
-    "createUpdaterArtifacts": false,
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -111,19 +111,7 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
-      "tsp": false,
-      "wix": {
-        "language": "zh-CN",
-        "skipWebviewInstall": false,
-        "license": "resources/LICENSE"
-      },
-      "nsis": {
-        "license": "resources/LICENSE",
-        "installerIcon": "icons/icon.ico",
-        "installMode": "perMachine",
-        "languages": ["SimpChinese", "English"],
-        "displayLanguageSelector": true
-      }
+      "tsp": false
     }
   }
 }
